@@ -113,8 +113,7 @@ export async function getCompanyUsers(req, res, next) {
 
 export async function getUser(req, res, next) {
   try {
-    const userId = req.params.id;
-
+    const userId = req.query.userId;
     const usersList = await User.findOne({ _id: userId }).populate("companyId");
 
     res.status(201).json({
@@ -205,8 +204,49 @@ export async function updateUser(req, res, next) {
     // check email exist or not 
     const existingUser = await User.findOne({ email: data.email, _id: { $ne: userId } });
 
-    if (existingUser) {
-      return res.status(208).json({ message: "Email address already exists" });
+    const exist = await User.find({ email: data.email });
+    if (exist.length > 0) {
+      const existEmail = exist[0].email;
+      const newEmail = await User.find({ _id: userId });
+      if (existEmail == newEmail[0].email) {
+        const editDetail = {
+          email: data.email,
+          password: data.password,
+          name: data.name,
+          phone: data.phone,
+          role: data.role,
+          confirmPassword: data.confirmPassword,
+        };
+        const editData = await User.findByIdAndUpdate(userId, editDetail, {
+          new: true,
+          runValidators: true,
+        });
+        res.status(201).json({
+          message: "User Details Updated Successfully",
+          editData,
+        });
+      } else {
+        res.status(208).json({
+          message: "User Already Exist",
+          exist,
+        });
+      }
+    } else {
+      const editDetail = {
+        email: data.email,
+        password: data.password,
+        name: data.name,
+        phone: data.phone,
+        role: data.role,
+      };
+      const editData = await User.findByIdAndUpdate(userId, editDetail, {
+        new: true,
+        runValidators: true,
+      });
+      res.status(201).json({
+        message: "User Details Updated Successfully",
+        editData,
+      });
     }
 
     const editDetail = {
@@ -247,5 +287,18 @@ export async function updateUserThemeColor(req, res, next) {
     });
   } catch (err) {
     next(err);
+  }
+}
+export async function getUserData(req, res, next){
+  try {
+    const userId = req.query.userId;
+    const usersList = await User.findOne({ _id: userId }).populate("companyId");
+
+    res.status(201).json({
+      message: "Get users",
+      usersList,
+    });
+  } catch (err) {
+    console.log("err", err);
   }
 }

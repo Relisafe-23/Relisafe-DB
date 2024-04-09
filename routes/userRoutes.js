@@ -11,11 +11,13 @@ import {
   getCompanyUsers,
   getAllCompanyUsers,
   updateUserThemeColor,
+  getUserData,
 } from "../controllers/userController.js";
 import { verifyToken } from "../utils/tokenAuth.js";
 
 router.route("/").post(verifyToken, createUser);
-router.route("/list").get(verifyToken, getAllUser);
+router.route("/").get(getUserData);
+router.route("/list").get(getAllUser);
 router.route("/company/list").get(verifyToken, getCompanyUsers);
 router.route("/login").post(login);
 router.route("/:id").get(getUser).patch(verifyToken, updateUser).delete(verifyToken, deleteUser);

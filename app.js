@@ -24,6 +24,8 @@ import sparePartsAnalysis from "./routes/sparePartsAnalysisRoutes.js";
 import productTreeStructureRoutes from "./routes/productTreeStructureRoutes.js";
 import FMECARoutes from "./routes/FMECARoutes.js";
 import SafetyRoutes from "./routes/safetyRoutes.js";
+import FTAtreeRoutes from "./routes/FTAtreeRoutes.js";
+import uploadFile from "./routes/uploadFile.js";
 import libraryRoutes from "./routes/libraryRoutes.js";
 
 //Allow Cross-Origin requests
@@ -71,6 +73,8 @@ app.use("/api/v1/pmMra", pmMraRoutes);
 app.use("/api/v1/sparePartsAnalysis", sparePartsAnalysis);
 app.use("/api/v1/FMECA", FMECARoutes);
 app.use("/api/v1/safety", SafetyRoutes);
+app.use("/api/v1/FTA", FTAtreeRoutes);
+app.use("/api/v1/FTAjson", uploadFile);
 app.use("/api/v1/library",libraryRoutes);
 // handle undefined Routes
 app.use("*", (req, res, next) => {
