@@ -92,22 +92,25 @@ export async function login(req, res, next) {
     console.log("err", err);
   }
 }
-
 export async function getCompanyUsers(req, res, next) {
   try {
     const data = req.query;
+    console.log("data.....", data)
 
     const usersList = await User.find({
       companyId: data.companyId,
-      _id: { $ne: data.userId },
-    }).populate("companyId");
-
+      _id: { $nin: [data.userId] }, // Exclude the current user only
+      role: { $nin: ["admin"] } // Exclude admin role
+    })
+    .where("role").ne("SuperAdmin"); // Additional condition to exclude SuperAdmin role
+    
     res.status(201).json({
       message: "List Of users In Company",
       usersList,
     });
   } catch (err) {
     console.log("err", err);
+    res.status(500).json({ error: "Internal server error" });
   }
 }
 
