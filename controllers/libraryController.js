@@ -18,7 +18,7 @@ export async function createLibrary(req, res, next) {
         { key: "Operating Phase", name: "operatingPhase" },
         { key: "Function", name: "function" },
         { key: "Failure Mode", name: "failureMode" },
-        { key: "Search FM", name: "searchFM" },
+        // { key: "Search FM", name: "searchFM" },
         {
           key: "Failure Mode Ratio Alpha",
           name: "failureModeRatioAlpha",
