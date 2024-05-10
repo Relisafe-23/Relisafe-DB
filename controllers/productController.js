@@ -962,85 +962,32 @@ export async function updateProduct(req, res, next) {
 export async function deleteProduct(req, res, next) {
   try {
     const data = req.body;
+
+    // Find the parent node
     let existMainTree = await productTreeStructure.findOne({
       _id: data.productTreeStructureId,
     });
-
-    let productDeleteData = [];
-
-    let deletedData = [];
-
-    const treeStructure = existMainTree?.treeStructure;
-    let updateData;
-    updateNodeIntoTree(treeStructure, data.productId, existMainTree.id);
-
-    async function updateNodeIntoTree(node, nodeId, id) {
-      if (node.status === "active") {
-        productDeleteData.push(node);
+    function deleteNode(node) {
+      if (node.id == data.productId) {
+        node.status = "inactive";
+        return true;
       }
-      if (node.children != null) {
+      if (node.children) {
         for (let i = 0; i < node.children.length; i++) {
-          deleteNodeFromTree(node.children[i], node.children[i].id, id);
-        }
-      }
-      async function deleteNodeFromTree(node, nodeId, id) {
-        if (node.status === "active") {
-          productDeleteData.push(node);
-        }
-        if (node.children != null) {
-          for (let i = 0; i < node.children.length; i++) {
-            deleteNodeFromTree(node.children[i], node.children[i].id, id);
+          if (deleteNode(node.children[i])) {
+            return true;
           }
         }
       }
-      for (let i = 0; i < productDeleteData.length; i++) {
-        getMultipleDeleteNodeFromTree(
-          productDeleteData[i],
-          productDeleteData[i].id,
-          id
-        );
-      }
-
-      async function getMultipleDeleteNodeFromTree(node, nodeId, id) {
-        if (node.id == data.productId) {
-          deletedData.push(node);
-
-          if (node.children != null) {
-            for (let i = 0; i < node.children.length; i++) {
-              deleteChildNodeFromTree(
-                node.children[i],
-                node.children[i].id,
-                id
-              );
-            }
-          }
-          async function deleteChildNodeFromTree(node, nodeId, id) {
-            deletedData.push(node);
-            if (node.children != null) {
-              for (let i = 0; i < node.children.length; i++) {
-                deleteChildNodeFromTree(
-                  node.children[i],
-                  node.children[i].id,
-                  id
-                );
-              }
-            }
-          }
-        }
-      }
-      for (let i = 0; i < deletedData.length; i++) {
-        deleteMultipleNodeFromTree(deletedData[i], deletedData[i].id, id);
-      }
-
-      async function deleteMultipleNodeFromTree(node, nodeId, id) {
-        if (node.id == nodeId) {
-          node.status = INACTIVE_TREE;
-          await productTreeStructure.findByIdAndUpdate(id, {
-            treeStructure: treeStructure,
-          });
-        }
-      }
+      return false;
     }
+
+    deleteNode(existMainTree.treeStructure);
+
+    await productTreeStructure.findByIdAndUpdate(data.productTreeStructureId, {
+      treeStructure: existMainTree.treeStructure,
+    });
+
     // update parent product index value
     const parentData = await productTreeStructure.find({
       companyId: data.companyId,
@@ -1064,22 +1011,48 @@ export async function deleteProduct(req, res, next) {
       }
       let childNode = parentProduct[i].treeStructure.children;
       if (childNode != null) {
+        let childIndexCount = parentProduct[i].treeStructure.indexCount;
+        let j = 0;
         for (let i = 0; i < childNode.length; i++) {
-          let indxCount = parentIndexCount + "." + (i + 1);
-          updateChildProductIndex(childNode[i], childNode[i].id, indxCount);
+          if (childNode[i].status == ACTIVE_TREE) {
+            let indexCount = childIndexCount + "." + (j + 1);
+            j++;
+            updateChildProductIndex(childNode[i], childNode[i].id, indexCount);
+          }
         }
+      }
 
-        async function updateChildProductIndex(node, nodeId, indexCount) {
-          if (node.id == nodeId) {
+      async function updateChildProductIndex(node, nodeId, indexCount) {
+        if (node.id == nodeId) {
+          if (node.status == ACTIVE_TREE) {
+            
             node.indexCount = indexCount;
+            console.log("node.....", node.productName);
+            console.log("index ocunt.....",node.indexCount);
             await productTreeStructure.findByIdAndUpdate(parentProduct[i].id, {
               treeStructure: parentProduct[i].treeStructure,
             });
           }
         }
+        
+        if (node.children.length > 0) {
+          let childNode = node.children;
+          let childIndexCount = node.indexCount;
+          let j = 0;
+          for (let i = 0; i < childNode.length; i++) {
+            if (childNode[i].status == ACTIVE_TREE) {              
+              let indexCount = childIndexCount + "." + (j + 1);
+              j++;
+              updateChildProductIndex(
+                childNode[i],
+                childNode[i].id,
+                indexCount
+              );
+            }
+          }
+        }
       }
     }
-
     //update fr rate after delete product pbs tree
     let parentNode = [];
     let existTree1 = await productTreeStructure.findOne({
@@ -1135,9 +1108,7 @@ export async function deleteProduct(req, res, next) {
         }
       }
     }
-
-    // update Mttr after delete pbs tree
-
+    // update mttr after pbs product delete
     let existTreeMttr = await productTreeStructure.findOne({
       _id: data.productTreeStructureId,
     });
@@ -1216,346 +1187,7 @@ export async function deleteProduct(req, res, next) {
           });
         }
       }
-
-      // update pbs tree index number changes particular parent tree after delete
-
-      let updateIndexTree = await productTreeStructure.findOne({
-        _id: data.productTreeStructureId,
-      });
-      const productIndexTreeStructure = updateIndexTree?.treeStructure;
-
-      let updateChildProductIndexData = [];
-
-      let firstIndex = data.indexCount;
-
-      let productIndexCount = String(firstIndex)[0];
-
-      let parentProductId = data.parentId;
-
-      updateProductIndexIntoTree(
-        productIndexTreeStructure,
-        data.productId,
-        productIndexCount,
-        updateIndexTree.id
-      );
-
-      async function updateProductIndexIntoTree(node, nodeId, id) {
-        if (node.id == data.parentId) {
-          for (let i = 0; i < node.children.length; i++) {
-            if (node.children[i].status === "active") {
-              updateChildProductIndexData.push(node.children[i]);
-            }
-          }
-        }
-        if (node.children != null) {
-          for (let i = 0; i < node.children.length; i++) {
-            findIndexNodeFromTree(node.children[i], nodeId, id);
-          }
-        }
-        async function findIndexNodeFromTree(node) {
-          if (node.id == data.parentId) {
-            if (node.children != null) {
-              for (let i = 0; i < node.children.length; i++) {
-                if (node.children[i].status === "active") {
-                  updateChildProductIndexData.push(node.children[i]);
-                }
-              }
-            }
-            if (node.children != null) {
-              for (let i = 0; i < node.children.length; i++) {
-                findIndexNodeFromTree(node.children[i], nodeId, id);
-              }
-            }
-          } else if (node.children != null) {
-            for (let i = 0; i < node.children.length; i++) {
-              findIndexNodeFromTree(node.children[i], nodeId, id);
-            }
-          }
-        }
-      }
-      for (let i = 0; i < updateChildProductIndexData.length; i++) {
-        let indexCount = data.indexCount + "." + (i + 1);
-        calcFrpProductFromTree(
-          updateChildProductIndexData[i],
-          updateChildProductIndexData[i].id,
-          indexCount,
-          updateIndexTree.id
-        );
-      }
-      async function calcFrpProductFromTree(
-        node,
-        parentNodeId,
-        indexCount,
-        id
-      ) {
-        if (node.id == parentNodeId) {
-          node.indexCount = indexCount;
-          await productTreeStructure.findByIdAndUpdate(id, {
-            treeStructure: productIndexTreeStructure,
-          });
-        }
-        if (node.children != null) {
-          for (let i = 0; i < node.children.length; i++) {
-            let childIndex = indexCount + "." + (i + 1);
-            findIndexChildNodeFromTree(
-              node.children[i],
-              node.children[i].id,
-              childIndex,
-              id
-            );
-          }
-        }
-
-        async function findIndexChildNodeFromTree(
-          node,
-          nodeId,
-          childIndex,
-          id
-        ) {
-          if (node.id == nodeId) {
-            node.indexCount = indexCount;
-            await productTreeStructure.findByIdAndUpdate(parentProduct[i].id, {
-              treeStructure: parentProduct[i].treeStructure,
-            });
-          }
-          if (node.children != null) {
-            for (let i = 0; i < node.children.length; i++) {
-              let childIndex = childIndex + "." + (i + 1);
-              findIndexChildNodeFromTree(
-                node.children[i],
-                node.children[i].id,
-                childIndex,
-                id
-              );
-            }
-          }
-        }
-      }
     }
-
-    // //update fr rate after delete product pbs tree
-    // let parentNode = [];
-    // let existTree1 = await productTreeStructure.findOne({
-    //   _id: data.productTreeStructureId,
-    // });
-    // const treeStructure1 = existTree1?.treeStructure;
-
-    // let totatFrpRate = 0;
-
-    // updateFrpNodeIntoTree(treeStructure1, data.productId, existTree1.id);
-    // async function updateFrpNodeIntoTree(node, nodeId, id) {
-    //   if (node.status === "active") {
-    //     parentNode.push(node);
-    //   }
-
-    //   if (node.children != null) {
-    //     for (let i = 0; i < node.children.length; i++) {
-    //       findFrpNodeFromTree(node.children[i], nodeId, id);
-    //     }
-    //   }
-    //   async function findFrpNodeFromTree(node) {
-    //     if (node.children.length > 1)
-    //       if (node.status === "active") {
-    //         parentNode.push(node);
-    //       }
-    //   }
-    // }
-
-    // for (let i = parentNode.length - 1; i >= 0; i--) {
-    //   calcFrpNodeFromTree(parentNode[i], parentNode[i].id, existTree1.id);
-    // }
-
-    // async function calcFrpNodeFromTree(node, parentNodeId, id) {
-    //   let childFrpRate = 0;
-    //   if (node.children != null) {
-    //     for (let i = 0; i < node.children.length; i++) {
-    //       if (node.children[i].fr && node.children[i].status === "active") {
-    //         childFrpRate = childFrpRate + node.children[i].fr;
-    //         node.fr = childFrpRate;
-    //       }
-    //     }
-
-    //     for (let i = 0; i < parentNode.length; i++) {
-    //       updateParentNode(parentNode[i], parentNodeId, childFrpRate, id);
-    //     }
-    //   }
-    //   async function updateParentNode(node, parentNodeId, childFrpRate, id) {
-    //     if (node.id == parentNodeId) {
-    //       node.fr = childFrpRate;
-    //       await productTreeStructure.findByIdAndUpdate(id, {
-    //         treeStructure: treeStructure1,
-    //       });
-    //     }
-    //   }
-    // }
-
-    // // update Mttr after delete pbs tree
-
-    // let existTreeMttr = await productTreeStructure.findOne({
-    //   _id: data.productTreeStructureId,
-    // });
-    // const treeStructureMttr = existTreeMttr?.treeStructure;
-    // let mttrParentNode = [];
-
-    // updateMttrNodeIntoTree(treeStructureMttr, data.productId, existTreeMttr.id);
-    // async function updateMttrNodeIntoTree(node, nodeId, id) {
-    //   if (node.status === "active") {
-    //     mttrParentNode.push(node);
-    //   }
-    //   if (node.children != null) {
-    //     for (let i = 0; i < node.children.length; i++) {
-    //       findMttrNodeFromTree(node.children[i], nodeId, id);
-    //     }
-    //   }
-    //   async function findMttrNodeFromTree(node) {
-    //     if (node.status === "active") {
-    //       mttrParentNode.push(node);
-    //     }
-    //     if (node.children != null) {
-    //       for (let i = 0; i < node.children.length; i++) {
-    //         if (node.children[i].children.length > 1) {
-    //           findMttrNodeFromTree(node.children[i], nodeId, id);
-    //         }
-    //       }
-    //     } else if (node.children != null) {
-    //       for (let i = 0; i < node.children.length; i++) {
-    //         findMttrNodeFromTree(node.children[i], nodeId, id);
-    //       }
-    //     }
-    //   }
-    // }
-    // //update parent mttr from the bottom each product
-    // let existTree2 = await productTreeStructure.findOne({
-    //   _id: data.productTreeStructureId,
-    // });
-    // const treeStructure2 = existTree2?.treeStructure;
-
-    // let multipleMctValue = 0;
-    // let addFrpValue = 0;
-    // let totalParentFrpValue = 0;
-
-    // findParentNodeMttrTree(treeStructure2, data.productId, existTree2.id);
-    // async function findParentNodeMttrTree(node, nodeId, id) {
-    //   if (node.children != null) {
-    //     for (let i = 0; i < node.children.length; i++) {
-    //       findNodeFromTree(node.children[i], nodeId, id);
-    //     }
-    //   }
-    //   async function findNodeFromTree(node, nodeId, id) {
-    //     if (node.fr && node.mct && node.status === "active") {
-    //       multipleMctValue = node.fr * node.mct;
-    //       addFrpValue = addFrpValue + node.fr;
-    //       totalParentFrpValue = totalParentFrpValue + multipleMctValue;
-    //     }
-    //     if (node.children != null) {
-    //       for (let i = 0; i < node.children.length; i++) {
-    //         findNodeFromTree(node.children[i], nodeId, id);
-    //       }
-    //     }
-    //   }
-    //   updateMttrParentTotalValue(node, addFrpValue, totalParentFrpValue, id);
-    //   async function updateMttrParentTotalValue(node, addFrpValue, totalParentFrpValue, id) {
-    //     let totalMttr = totalParentFrpValue / addFrpValue;
-
-    //     if (node.id) {
-    //       node.mttr = totalMttr;
-    //       await productTreeStructure.findByIdAndUpdate(id, {
-    //         treeStructure: treeStructure2,
-    //       });
-    //     }
-    //   }
-
-    //   // update pbs tree index number changes particular parent tree after delete
-
-    //   let updateIndexTree = await productTreeStructure.findOne({
-    //     _id: data.productTreeStructureId,
-    //   });
-    //   const productIndexTreeStructure = updateIndexTree?.treeStructure;
-
-    //   let updateChildProductIndexData = [];
-
-    //   let firstIndex = data.indexCount;
-
-    //   let productIndexCount = String(firstIndex)[0];
-
-    //   let parentProductId = data.parentId;
-
-    //   updateProductIndexIntoTree(productIndexTreeStructure, data.productId, productIndexCount, updateIndexTree.id);
-
-    //   async function updateProductIndexIntoTree(node, nodeId, id) {
-    //     if (node.id == data.parentId) {
-    //       for (let i = 0; i < node.children.length; i++) {
-    //         if (node.children[i].status === "active") {
-    //           updateChildProductIndexData.push(node.children[i]);
-    //         }
-    //       }
-    //     }
-    //     if (node.children != null) {
-    //       for (let i = 0; i < node.children.length; i++) {
-    //         findIndexNodeFromTree(node.children[i], nodeId, id);
-    //       }
-    //     }
-    //     async function findIndexNodeFromTree(node) {
-    //       if (node.id == data.parentId) {
-    //         if (node.children != null) {
-    //           for (let i = 0; i < node.children.length; i++) {
-    //             if (node.children[i].status === "active") {
-    //               updateChildProductIndexData.push(node.children[i]);
-    //             }
-    //           }
-    //         }
-    //         if (node.children != null) {
-    //           for (let i = 0; i < node.children.length; i++) {
-    //             findIndexNodeFromTree(node.children[i], nodeId, id);
-    //           }
-    //         }
-    //       } else if (node.children != null) {
-    //         for (let i = 0; i < node.children.length; i++) {
-    //           findIndexNodeFromTree(node.children[i], nodeId, id);
-    //         }
-    //       }
-    //     }
-    //   }
-    //   for (let i = 0; i < updateChildProductIndexData.length; i++) {
-    //     let indexCount = data.indexCount + "." + (i + 1);
-    //     calcFrpProductFromTree(
-    //       updateChildProductIndexData[i],
-    //       updateChildProductIndexData[i].id,
-    //       indexCount,
-    //       updateIndexTree.id
-    //     );
-    //   }
-    //   async function calcFrpProductFromTree(node, parentNodeId, indexCount, id) {
-    //     if (node.id == parentNodeId) {
-    //       node.indexCount = indexCount;
-    //       await productTreeStructure.findByIdAndUpdate(id, {
-    //         treeStructure: productIndexTreeStructure,
-    //       });
-    //     }
-    //     if (node.children != null) {
-    //       for (let i = 0; i < node.children.length; i++) {
-    //         let childIndex = indexCount + "." + (i + 1);
-    //         findIndexChildNodeFromTree(node.children[i], node.children[i].id, childIndex, id);
-    //       }
-    //     }
-
-    //     async function findIndexChildNodeFromTree(node, nodeId, childIndex, id) {
-    //       if (node.id == nodeId) {
-    //         node.indexCount = childIndex;
-    //         await productTreeStructure.findByIdAndUpdate(id, {
-    //           treeStructure: productIndexTreeStructure,
-    //         });
-    //       }
-    //       if (node.children != null) {
-    //         for (let i = 0; i < node.children.length; i++) {
-    //           let childIndex = childIndex + "." + (i + 1);
-    //           findIndexChildNodeFromTree(node.children[i], node.children[i].id, childIndex, id);
-    //         }
-    //       }
-    //     }
-    //   }
-    // }
-
     // delete parent product
 
     let deleteTree = await productTreeStructure.findOne({
@@ -1573,12 +1205,12 @@ export async function deleteProduct(req, res, next) {
       _id: data.productTreeStructureId,
     });
 
-    res.status(201).json({
-      message: "Product Deleted Successfuly",
-      data: {
-        existTree,
-      },
-    });
+    // res.status(201).json({
+    //   message: "Product Deleted Successfully",
+    //   data: {
+    //     existTree: existMainTree,
+    //   },
+    // });
   } catch (error) {
     next(error);
   }
