@@ -1017,7 +1017,11 @@ export async function deleteProduct(req, res, next) {
           if (childNode[i].status == ACTIVE_TREE) {
             let indexCount = childIndexCount + "." + (j + 1);
             j++;
-            updateChildProductIndex(childNode[i], childNode[i].id, indexCount);
+            await updateChildProductIndex(
+              childNode[i],
+              childNode[i].id,
+              indexCount
+            );
           }
         }
       }
@@ -1025,25 +1029,22 @@ export async function deleteProduct(req, res, next) {
       async function updateChildProductIndex(node, nodeId, indexCount) {
         if (node.id == nodeId) {
           if (node.status == ACTIVE_TREE) {
-            
             node.indexCount = indexCount;
-            console.log("node.....", node.productName);
-            console.log("index ocunt.....",node.indexCount);
             await productTreeStructure.findByIdAndUpdate(parentProduct[i].id, {
               treeStructure: parentProduct[i].treeStructure,
             });
           }
         }
-        
+
         if (node.children.length > 0) {
           let childNode = node.children;
           let childIndexCount = node.indexCount;
           let j = 0;
           for (let i = 0; i < childNode.length; i++) {
-            if (childNode[i].status == ACTIVE_TREE) {              
+            if (childNode[i].status == ACTIVE_TREE) {
               let indexCount = childIndexCount + "." + (j + 1);
               j++;
-              updateChildProductIndex(
+              await updateChildProductIndex(
                 childNode[i],
                 childNode[i].id,
                 indexCount
@@ -1205,12 +1206,12 @@ export async function deleteProduct(req, res, next) {
       _id: data.productTreeStructureId,
     });
 
-    // res.status(201).json({
-    //   message: "Product Deleted Successfully",
-    //   data: {
-    //     existTree: existMainTree,
-    //   },
-    // });
+    res.status(201).json({
+      message: "Product Deleted Successfully",
+      data: {
+        existTree: existMainTree,
+      },
+    });
   } catch (error) {
     next(error);
   }
