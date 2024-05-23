@@ -39,7 +39,10 @@ export async function getAllProductDetails(req, res, next) {
 
 export async function getAllProductTreeStructure(req, res, next) {
   try {
-    const projectData = await productTreeStructure.find().populate("projectId").populate("companyId");
+    const projectData = await productTreeStructure
+      .find()
+      .populate("projectId")
+      .populate("companyId");
 
     res.status(201).json({
       message: "Get All Project Tree Structure",
@@ -126,6 +129,73 @@ export async function getTreeProductList(req, res, next) {
   } catch (error) {
     next(error);
   }
+}
+export async function getParticularProduct(req, res, next) {
+  try {
+    const data = req.query;
+    const treeStructure = await productTreeStructure
+      .find({ projectId: data.projectId })
+      .populate("projectId")
+      .populate("companyId");
+    const allProductData = [];
+    treeStructure.map((list) => {
+      const addParentProduct = list.treeStructure;
+      if (addParentProduct.status == "active") {
+        allProductData.push(addParentProduct);
+      }
+      const childNode = addParentProduct.children;
+      getNodeTreeProduct(childNode);
+      async function getNodeTreeProduct(childNode) {
+        if (childNode != null) {
+          for (let i = 0; i < childNode.length; i++) {
+            if (childNode[i].status == "active") {
+              allProductData.push(childNode[i]);
+            }
+            getNodeTreeProduct(childNode[i].children);
+          }
+        }
+      }
+    });
+
+    
+    let found = false; // Flag to indicate if the matching element is found
+let nextElementData = null; // Variable to store the first next element data
+
+allProductData.forEach((mList, index) => {
+  if (!found && mList.id == data.treeStructureId) {
+    const currentIndexCount = mList.indexCount.toString(); // Convert indexCount to a string
+    const currentIndexParts = currentIndexCount.split('.'); // Split into integer and decimal parts
+    const nextIndexCount = currentIndexParts[0] + '.' + (parseInt(currentIndexParts[1]) + 1); // Increment decimal part by 1
+    console.log("nextIndexCount.......", nextIndexCount);
+    // Find the first next element
+    const nextElement = allProductData.find(
+      (item) => item.indexCount.toString() === nextIndexCount
+    );
+   
+    if (nextElement) {
+      found = true;
+      nextElementData = nextElement; // Store the next element data
+    } else {
+      console.log("No next element found.");
+    }
+  }
+});
+
+// Send the response outside the loop
+console.log("nextElementData......", nextElementData)
+if (nextElementData) {
+  res.status(201).json({
+    message: "Get Product List Tree Structure",
+    data: nextElementData,
+  });
+} else {
+  // If no next element is found, send an appropriate response
+  res.status(404).json({
+    message: "No next element found.",
+  });
+}
+
+  } catch (err) {}
 }
 
 export const deleteproductTreeStructure = deleteOne(productTreeStructure);
