@@ -23,6 +23,9 @@ const connectLibrarySchema = new Schema({
   sourceValue:{
     type: String,
   }, 
+  destinationModule:{
+    type: String,
+  },
   destinationId:{
     type: mongoose.Schema.Types.ObjectId,
   },

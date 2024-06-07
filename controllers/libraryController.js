@@ -436,6 +436,7 @@ export async function createConnectLibrary(req, res, next) {
     const promises = mappedData.map(async (list) => {
       const sourceValue = data?.sourceValue?.trim().toLowerCase();
       const destinationValue = list?.valueEnd?.trim().toLowerCase();
+      const destinationModuleValue = data?.destinationModuleName?.trim().toLowerCase();
       // check destinationa fields are already exist or not
       const existSeperateData = await separateLibrary.find({
         projectId: data.projectId,
@@ -471,6 +472,7 @@ export async function createConnectLibrary(req, res, next) {
             sourceId: data.sourceId,
             sourceName: data.sourceName,
             sourceValue: sourceValue,
+            destinationModule: destinationModuleValue,
             destinationId: list.end.id,
             destinationName: list.end.value,
             destinationValue: destinationValue,

@@ -1269,14 +1269,14 @@ export async function parentProductCopyPaste(req, res, next) {
     });
 
     const copyTreeStructure = existCopyTree?.treeStructure;
-    const pasteTreeStructure = existPasteTree?.treeStructure;
+    const pasteTreeStructure = existPasteTree?.treeStructure;    
     const indexCount = pasteTreeStructure.indexCount;
 
     let treeArr = [];
     let copyTreeProduct = [];
     checkNodeIntoTree(copyTreeStructure);
     async function checkNodeIntoTree(node) {
-      if (node.status === "active") {
+      if (node.status == "active") {
         treeArr.push(node);
       }
       if (node.children.length > 0) {
@@ -1310,7 +1310,7 @@ export async function parentProductCopyPaste(req, res, next) {
       const childrenTreeLength =
         pasteTreeStructure.children.length == 0
           ? +1
-          : pasteTreeStructure.children.length + 1;
+          : pasteTreeStructure.children.length;
       const createNode = {
         id: mongoose.Types.ObjectId(createData._id),
         indexCount: `${indexCount}.${childrenTreeLength}`,
@@ -1331,7 +1331,7 @@ export async function parentProductCopyPaste(req, res, next) {
         mlh: "",
         children: [],
       };
-
+      
       pasteTreeStructure.children.push(createNode);
 
       await productTreeStructure.findByIdAndUpdate(existPasteTree._id, {
@@ -1510,7 +1510,7 @@ export async function getSinglePbsTreeProduct(req, res, next) {
     let treeArr = [];
     checkNodeIntoTree(treeData);
     async function checkNodeIntoTree(node) {
-      if (node.status === "active") {
+      if (node?.status == "active") {
         treeArr.push(node);
       }
       if (node.children.length > 0) {
