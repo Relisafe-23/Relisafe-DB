@@ -95,33 +95,41 @@ export async function getTreeProductList(req, res, next) {
       .find({ projectId: data.projectId })
       .populate("projectId")
       .populate("companyId");
+
     const allProductData = [];
-    treeStructure.map((list) => {
+
+    const processTreeStructure = async (list) => {
       const addParentProduct = list.treeStructure;
-      if (addParentProduct.status == "active") {
+      if (addParentProduct.status === "active") {
         allProductData.push(addParentProduct);
       }
 
       const childNode = addParentProduct.children;
-      getNodeTreeProduct(childNode);
-      async function getNodeTreeProduct(childNode) {
-        if (childNode != null) {
-          for (let i = 0; i < childNode.length; i++) {
-            if (childNode[i].status == "active") {
-              allProductData.push(childNode[i]);
-            }
-            getNodeTreeProduct(childNode[i].children);
+      await getNodeTreeProduct(childNode);
+    };
+
+    const getNodeTreeProduct = async (childNode) => {
+      if (childNode != null) {
+        const promises = childNode.map(async (node) => {
+          if (node.status === "active") {
+            allProductData.push(node);
           }
-        }
+          await getNodeTreeProduct(node.children);
+        });
+        await Promise.all(promises);
       }
-    });
+    };
+
+    // Process all top-level nodes concurrently
+    await Promise.all(treeStructure.map(processTreeStructure));
+
     let productData = "";
     var result = allProductData.filter(function (e, i) {
+
       if (allProductData[i].id == data.treeStructureId) {
         productData = e;
       }
     });
-
     res.status(201).json({
       message: "Get Product List Tree Structure",
       data: productData,
@@ -130,6 +138,7 @@ export async function getTreeProductList(req, res, next) {
     next(error);
   }
 }
+
 export async function getParticularProduct(req, res, next) {
   try {
     const data = req.query;
@@ -166,7 +175,6 @@ allProductData.forEach((mList, index) => {
     const currentIndexCount = mList.indexCount.toString(); // Convert indexCount to a string
     const currentIndexParts = currentIndexCount.split('.'); // Split into integer and decimal parts
     const nextIndexCount = currentIndexParts[0] + '.' + (parseInt(currentIndexParts[1]) + 1); // Increment decimal part by 1
-    console.log("nextIndexCount.......", nextIndexCount);
     // Find the first next element
     const nextElement = allProductData.find(
       (item) => item.indexCount.toString() === nextIndexCount
