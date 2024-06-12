@@ -13,7 +13,7 @@ export async function createLibrary(req, res, next) {
       companyId: data.companyId,
     });
     let moduleFieldData = [];
-    if (mName.test("FMECA") || mName.test("SAFETY")) {
+    if (mName.test("FMECA")) {
       moduleFieldData.push(
         { key: "Operating Phase", name: "operatingPhase" },
         { key: "Function", name: "function" },
@@ -66,7 +66,35 @@ export async function createLibrary(req, res, next) {
         { key: "User Field9", name: "userField9" },
         { key: "User Field10", name: "userField10" }
       );
-    } else if (mName.test("PMMRA")) {
+    } else if (mName.test("SAFETY")){
+      moduleFieldData.push(
+        { key: "Mode of Operation", name: "modeOfOperation" },
+        { key: "Hazard Cause", name: "hazardCause" },
+        { key: "Effect of Hazard", name: "effectOfHazard" },
+        { key: "Hazard Clasification", name: "hazardClasification" },
+        { key: "Design Assurance Level", name: "designAssuranceLevel" },
+        { key: "Means of Detection", name: "meansOfDetection" },
+        { key: "Crew Response", name: "crewResponse" },
+        { key: "Unique Hazard Identifier", name: "uniqueHazardIdentifier" },
+        { key: "Initial Severity", name: "initialSeverity" },
+        { key: "Initial Likelihood", name: "initialLikelihood" },
+        { key: "Initial Risk Level", name: "initialRiskLevel" },
+        { key: "Design Mitigation", name: "designMitigation" },
+        { key: "Design Mitigation Responsibility", name: "designMitigatonResbiity" },
+        { key: "Design Mitigation Evidence", name: "designMitigtonEvidence" },
+        { key: "Opernal Maintain Mitigation", name: "opernalMaintanMitigation" },
+        { key: "Opernal Mitigation Responsibility", name: "opernalMitigatonResbility" },
+        { key: "Operatnal Mitigation Evidence", name: "operatnalMitigationEvidence" },
+        { key: "Residual Severity", name: "residualSeverity" },
+        { key: "Residual Likelihood", name: "residualLikelihood" },
+        { key: "Residual Risk Level", name: "residualRiskLevel" },
+        { key: "Hazard Status", name: "hazardStatus" },
+        { key: "Fta Name Id", name: "ftaNameId" },
+        { key: "User Field1", name: "userField1" },
+        { key: "User Field2", name: "userField2" },
+      )
+    }
+    else if (mName.test("PMMRA")) {
       moduleFieldData.push(
         { key: "Evident1", name: "Evident1" },
         { key: "Items", name: "Items" },
