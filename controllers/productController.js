@@ -967,9 +967,11 @@ export async function deleteProduct(req, res, next) {
     let existMainTree = await productTreeStructure.findOne({
       _id: data.productTreeStructureId,
     });
+
     function deleteNode(node) {
       if (node.id == data.productId) {
-        node.status = "inactive";
+        // Mark this node and all its children as inactive
+        markInactive(node);
         return true;
       }
       if (node.children) {
@@ -980,6 +982,15 @@ export async function deleteProduct(req, res, next) {
         }
       }
       return false;
+    }
+
+    function markInactive(node) {
+      node.status = "inactive";
+      if (node.children) {
+        for (let i = 0; i < node.children.length; i++) {
+          markInactive(node.children[i]);
+        }
+      }
     }
 
     deleteNode(existMainTree.treeStructure);
@@ -1269,7 +1280,7 @@ export async function parentProductCopyPaste(req, res, next) {
     });
 
     const copyTreeStructure = existCopyTree?.treeStructure;
-    const pasteTreeStructure = existPasteTree?.treeStructure;    
+    const pasteTreeStructure = existPasteTree?.treeStructure;
     const indexCount = pasteTreeStructure.indexCount;
 
     let treeArr = [];
@@ -1331,7 +1342,7 @@ export async function parentProductCopyPaste(req, res, next) {
         mlh: "",
         children: [],
       };
-      
+
       pasteTreeStructure.children.push(createNode);
 
       await productTreeStructure.findByIdAndUpdate(existPasteTree._id, {
