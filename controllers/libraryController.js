@@ -571,7 +571,6 @@ export async function updateConnectLibraryField(req, res, next) {
           updateResults.push(updateData);
         });
       } else {
-        console.log("else.....")
         const mName = new RegExp(["^", data.moduleName, "$"].join(""), "i");
         const libraryData = await libraries.findOne({
           moduleName: mName,
