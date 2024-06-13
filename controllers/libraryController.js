@@ -464,7 +464,7 @@ export async function createConnectLibrary(req, res, next) {
     const promises = mappedData.map(async (list) => {
       const sourceValue = data?.sourceValue?.trim().toLowerCase();
       const destinationValue = list?.valueEnd?.trim().toLowerCase();
-      const destinationModuleValue = data?.destinationModuleName?.trim().toLowerCase();
+      const destinationModuleValue = data?.destinationModuleName?.trim();
       // check destinationa fields are already exist or not
       const existSeperateData = await separateLibrary.find({
         projectId: data.projectId,
@@ -538,6 +538,7 @@ export async function createConnectLibrary(req, res, next) {
 export async function updateConnectLibraryField(req, res, next) {
   try {
     const data = req.body;
+    
     const mappData = data.destinationData;
     const end = mappData.end;
     const valueEnd = mappData.valueEnd;
@@ -555,13 +556,13 @@ export async function updateConnectLibraryField(req, res, next) {
         sourceId: data.sourceId,
         destinationId: list.id,
       });
-      if (getdata != null) {
+      if (getdata.length > 0) {
         getdata.map(async (gList) => {
           const editData = {
             destinationValue: list.valueEnd,
             sourceValue: data.sourceValue,
+            destinationModule: data.destinationModuleName,
           };
-
           const updateData = await connectLibrary.findByIdAndUpdate(gList._id, editData, {
             runValidators: true,
             new: true,
@@ -570,6 +571,7 @@ export async function updateConnectLibraryField(req, res, next) {
           updateResults.push(updateData);
         });
       } else {
+        console.log("else.....")
         const mName = new RegExp(["^", data.moduleName, "$"].join(""), "i");
         const libraryData = await libraries.findOne({
           moduleName: mName,
@@ -586,6 +588,7 @@ export async function updateConnectLibraryField(req, res, next) {
           destinationId: list.id,
           destinationName: list.value,
           destinationValue: list.valueEnd,
+          destinationModule: data.destinationModuleName,
         });
       }
     }
@@ -631,6 +634,7 @@ export async function getConnectLibraryAllField(req, res, next) {
             sourceId: sourceId,
             sourceName: item.sourceName,
             sourceValue: sourceValue,
+            destinationModuleName: item.destinationModule,
             destinationData: [],
           };
         }
@@ -639,6 +643,7 @@ export async function getConnectLibraryAllField(req, res, next) {
           destinationId: item.destinationId,
           destinationName: item.destinationName,
           destinationValue: item.destinationValue,
+          destinationModuleName: item.destinationModule,
         });
       });
 
@@ -667,6 +672,7 @@ export async function getConnectLibraryAllField(req, res, next) {
             sourceId: sourceId,
             sourceName: item.sourceName,
             sourceValue: sourceValue,
+            destinationModuleName: item.destinationModule,
             destinationData: [],
           };
         }
@@ -674,6 +680,7 @@ export async function getConnectLibraryAllField(req, res, next) {
           destinationId: item.destinationId,
           destinationName: item.destinationName,
           destinationValue: item.destinationValue,
+          destinationModuleName: item.destinationModule,
         });
       });
 
