@@ -6,6 +6,7 @@ import {
   getAllProductDetails,
   getProductList,
   getTreeProductList,
+  getParticularProduct,
 } from "../controllers/productTreeStructureController.js";
 import { verifyToken } from "../utils/tokenAuth.js";
 
@@ -21,6 +22,8 @@ router.route("/list").get(verifyToken, getAllProductDetails);
 
 router.route("/product/list").get(verifyToken, getProductList);
 
-router.route("/get/tree/product/list").get(verifyToken, getTreeProductList);
+router.route("/get/tree/product/list").get(getTreeProductList);
+
+router.route("/get/particular/product").get(getParticularProduct);
 
 export default router;

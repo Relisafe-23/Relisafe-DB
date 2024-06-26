@@ -26,9 +26,9 @@ const FMECASchema = new Schema({
   failureMode: {
     type: String,
   },
-  searchFM: {
-    type: String,
-  },
+  // searchFM: {
+  //   type: String,
+  // },
   failureModeRatioAlpha: {
     type: Number,
   },

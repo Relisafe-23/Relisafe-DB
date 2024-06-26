@@ -14,110 +14,77 @@ const SafetySchema = new Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Product",
   },
-  operatingPhase: {
+  modeOfOperation: {
     type: String,
   },
-  function: {
+  hazardCause: {
     type: String,
   },
-  failureMode: {
+  effectOfHazard: {
     type: String,
   },
-  searchFM: {
+  hazardClasification: {
     type: String,
   },
-  failureModeRatioAlpha: {
+  designAssuranceLevel: {
     type: String,
   },
-  cause: {
+  meansOfDetection: {
     type: String,
   },
-  detectableMeansDuringOperation: {
+  crewResponse: {
     type: String,
   },
-  detectableMeansToMaintainer: {
+  uniqueHazardIdentifier: {
     type: String,
   },
-  BuiltInTest: {
+  initialSeverity: {
     type: String,
   },
-  subSystemEffect: {
+  initialLikelihood: {
     type: String,
   },
-  systemEffect: {
+  initialRiskLevel: {
     type: String,
   },
-  endEffect: {
+  designMitigation: {
     type: String,
   },
-  endEffectRatioBeta: {
+  designMitigatonResbiity: {
     type: String,
   },
-  safetyImpact: {
+  designMitigtonEvidence: {
     type: String,
   },
-  referenceHazardId: {
+  opernalMaintanMitigation: {
     type: String,
   },
-  realibilityImpact: {
-    type: String,
-  },
-  serviceDisruptionTime: {
+  opernalMitigatonResbility: {
     type: String,
   },
 
-  frequency: {
+  operatnalMitigationEvidence: {
     type: String,
   },
-  severity: {
+  residualSeverity: {
     type: String,
   },
-  riskIndex: {
+  residualLikelihood: {
     type: String,
   },
-  designControl: {
+  residualRiskLevel: {
     type: String,
   },
-  maintenanceControl: {
+  hazardStatus: {
     type: String,
   },
-  exportConstraints: {
-    type: String,
-  },
-  immediteActionDuringNonOperationalPhase: {
-    type: String,
-  },
-  immediteActionDuringOperationalPhase: {
+  ftaNameId: {
     type: String,
   },
   userField1: {
     type: String,
   },
   userField2: {
-    type: String,
-  },
-  userField3: {
-    type: String,
-  },
-  userField4: {
-    type: String,
-  },
-  userField5: {
-    type: String,
-  },
-  userField6: {
-    type: String,
-  },
-  userField7: {
-    type: String,
-  },
-  userField8: {
-    type: String,
-  },
-  userField9: {
-    type: String,
-  },
-  userField10: {
     type: String,
   },
 });

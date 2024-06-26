@@ -13,12 +13,12 @@ export async function createLibrary(req, res, next) {
       companyId: data.companyId,
     });
     let moduleFieldData = [];
-    if (mName.test("FMECA") || mName.test("SAFETY")) {
+    if (mName.test("FMECA")) {
       moduleFieldData.push(
         { key: "Operating Phase", name: "operatingPhase" },
         { key: "Function", name: "function" },
         { key: "Failure Mode", name: "failureMode" },
-        { key: "Search FM", name: "searchFM" },
+        // { key: "Search FM", name: "searchFM" },
         {
           key: "Failure Mode Ratio Alpha",
           name: "failureModeRatioAlpha",
@@ -66,7 +66,35 @@ export async function createLibrary(req, res, next) {
         { key: "User Field9", name: "userField9" },
         { key: "User Field10", name: "userField10" }
       );
-    } else if (mName.test("PMMRA")) {
+    } else if (mName.test("SAFETY")){
+      moduleFieldData.push(
+        { key: "Mode of Operation", name: "modeOfOperation" },
+        { key: "Hazard Cause", name: "hazardCause" },
+        { key: "Effect of Hazard", name: "effectOfHazard" },
+        { key: "Hazard Clasification", name: "hazardClasification" },
+        { key: "Design Assurance Level", name: "designAssuranceLevel" },
+        { key: "Means of Detection", name: "meansOfDetection" },
+        { key: "Crew Response", name: "crewResponse" },
+        { key: "Unique Hazard Identifier", name: "uniqueHazardIdentifier" },
+        { key: "Initial Severity", name: "initialSeverity" },
+        { key: "Initial Likelihood", name: "initialLikelihood" },
+        { key: "Initial Risk Level", name: "initialRiskLevel" },
+        { key: "Design Mitigation", name: "designMitigation" },
+        { key: "Design Mitigation Responsibility", name: "designMitigatonResbiity" },
+        { key: "Design Mitigation Evidence", name: "designMitigtonEvidence" },
+        { key: "Opernal Maintain Mitigation", name: "opernalMaintanMitigation" },
+        { key: "Opernal Mitigation Responsibility", name: "opernalMitigatonResbility" },
+        { key: "Operatnal Mitigation Evidence", name: "operatnalMitigationEvidence" },
+        { key: "Residual Severity", name: "residualSeverity" },
+        { key: "Residual Likelihood", name: "residualLikelihood" },
+        { key: "Residual Risk Level", name: "residualRiskLevel" },
+        { key: "Hazard Status", name: "hazardStatus" },
+        { key: "Fta Name Id", name: "ftaNameId" },
+        { key: "User Field1", name: "userField1" },
+        { key: "User Field2", name: "userField2" },
+      )
+    }
+    else if (mName.test("PMMRA")) {
       moduleFieldData.push(
         { key: "Evident1", name: "Evident1" },
         { key: "Items", name: "Items" },
@@ -436,6 +464,7 @@ export async function createConnectLibrary(req, res, next) {
     const promises = mappedData.map(async (list) => {
       const sourceValue = data?.sourceValue?.trim().toLowerCase();
       const destinationValue = list?.valueEnd?.trim().toLowerCase();
+      const destinationModuleValue = data?.destinationModuleName?.trim();
       // check destinationa fields are already exist or not
       const existSeperateData = await separateLibrary.find({
         projectId: data.projectId,
@@ -471,6 +500,7 @@ export async function createConnectLibrary(req, res, next) {
             sourceId: data.sourceId,
             sourceName: data.sourceName,
             sourceValue: sourceValue,
+            destinationModule: destinationModuleValue,
             destinationId: list.end.id,
             destinationName: list.end.value,
             destinationValue: destinationValue,
@@ -508,6 +538,7 @@ export async function createConnectLibrary(req, res, next) {
 export async function updateConnectLibraryField(req, res, next) {
   try {
     const data = req.body;
+    
     const mappData = data.destinationData;
     const end = mappData.end;
     const valueEnd = mappData.valueEnd;
@@ -525,13 +556,13 @@ export async function updateConnectLibraryField(req, res, next) {
         sourceId: data.sourceId,
         destinationId: list.id,
       });
-      if (getdata != null) {
+      if (getdata.length > 0) {
         getdata.map(async (gList) => {
           const editData = {
             destinationValue: list.valueEnd,
             sourceValue: data.sourceValue,
+            destinationModule: data.destinationModuleName,
           };
-
           const updateData = await connectLibrary.findByIdAndUpdate(gList._id, editData, {
             runValidators: true,
             new: true,
@@ -556,6 +587,7 @@ export async function updateConnectLibraryField(req, res, next) {
           destinationId: list.id,
           destinationName: list.value,
           destinationValue: list.valueEnd,
+          destinationModule: data.destinationModuleName,
         });
       }
     }
@@ -601,6 +633,7 @@ export async function getConnectLibraryAllField(req, res, next) {
             sourceId: sourceId,
             sourceName: item.sourceName,
             sourceValue: sourceValue,
+            destinationModuleName: item.destinationModule,
             destinationData: [],
           };
         }
@@ -609,6 +642,7 @@ export async function getConnectLibraryAllField(req, res, next) {
           destinationId: item.destinationId,
           destinationName: item.destinationName,
           destinationValue: item.destinationValue,
+          destinationModuleName: item.destinationModule,
         });
       });
 
@@ -637,6 +671,7 @@ export async function getConnectLibraryAllField(req, res, next) {
             sourceId: sourceId,
             sourceName: item.sourceName,
             sourceValue: sourceValue,
+            destinationModuleName: item.destinationModule,
             destinationData: [],
           };
         }
@@ -644,6 +679,7 @@ export async function getConnectLibraryAllField(req, res, next) {
           destinationId: item.destinationId,
           destinationName: item.destinationName,
           destinationValue: item.destinationValue,
+          destinationModuleName: item.destinationModule,
         });
       });
 
