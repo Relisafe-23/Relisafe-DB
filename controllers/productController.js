@@ -1234,7 +1234,7 @@ export async function getAllProduct(req, res, next) {
       .find()
       .populate("companyId")
       .populate("projectId");
-
+console.log("getAllProductDetails....");
     res.status(201).json({
       message: "Get All Product Details Successfully ",
       data: {
