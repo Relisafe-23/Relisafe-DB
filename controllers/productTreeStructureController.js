@@ -1,5 +1,6 @@
 import productTreeStructure from "../models/productTreeStructure.js";
 import { deleteOne, getAll } from "./baseController.js";
+import FRP from "../models/failureRatePredictionModel.js";
 
 export async function getProductTreeStructure(req, res, next) {
   try {
@@ -190,7 +191,6 @@ allProductData.forEach((mList, index) => {
 });
 
 // Send the response outside the loop
-console.log("nextElementData......", nextElementData)
 if (nextElementData) {
   res.status(201).json({
     message: "Get Product List Tree Structure",
@@ -204,6 +204,20 @@ if (nextElementData) {
 }
 
   } catch (err) {}
+}
+export async function getFtaTreeData(req, res, next){
+  try{
+    const data = req.query;
+   
+    const frpData = await FRP.find({projectId: data.projectId});
+    console.log("frpData......",frpData);
+    res.status(201).json({
+      message: "Get FTA Data Details Successfully",
+      data: frpData,
+    });
+  }catch(err){
+    next(err);
+  }
 }
 
 export const deleteproductTreeStructure = deleteOne(productTreeStructure);
