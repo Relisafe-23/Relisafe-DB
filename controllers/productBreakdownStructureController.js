@@ -7,6 +7,7 @@ import { ACTIVE_TREE } from "../constants/productStatus.js";
 export async function createProductBreakdownStructure(req, res, next) {
   try {
     const data = req.body;
+    console.log("data.......",data)
 
     const createProductBreakdownStructure = await productBreakdownStructure.create({
       productName: data.productName,
