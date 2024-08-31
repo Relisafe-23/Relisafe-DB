@@ -27,6 +27,7 @@ import SafetyRoutes from "./routes/safetyRoutes.js";
 import FTAtreeRoutes from "./routes/FTAtreeRoutes.js";
 import uploadFile from "./routes/uploadFile.js";
 import libraryRoutes from "./routes/libraryRoutes.js";
+import reportRoutes from "./routes/reportRoutes.js";
 
 //Allow Cross-Origin requests
 app.use(cors());
@@ -76,6 +77,7 @@ app.use("/api/v1/safety", SafetyRoutes);
 app.use("/api/v1/FTA", FTAtreeRoutes);
 app.use("/api/v1/FTAjson", uploadFile);
 app.use("/api/v1/library",libraryRoutes);
+app.use("/api/v1/reports",reportRoutes);
 // handle undefined Routes
 app.use("*", (req, res, next) => {
   const err = new AppError(404, "fail", "undefined route");
