@@ -8,9 +8,9 @@ import {
   createOne,
   updateOne,
 } from "./baseController.js";
-import nprdFrpDatas from "../models/nprdFrp2016Model.js";
-import nprdPartDescDatas from "../models/nprdPartDesc2016Model.js";
-import nprdPartTypeDatas from "../models/nprdPartType2016Model.js";
+import nprdFrpData from "../models/nprdFrp2016Model.js";
+import nprdPartDescData from "../models/nprdPartDesc2016Model.js";
+import nprdPartTypeData from "../models/nprdPartType2016Model.js";
 
 export async function createFailureRatePrediction(req, res, next) {
   try {
@@ -493,12 +493,12 @@ export async function getProductFailureRateData(req, res, next) {
   }
 }
 
-
 export async function getNprd2016Datas(req, res, next) {
   try {
-    const getFrpData = await nprdFrpDatas.find();
-    const getPartDescData = await nprdPartDescDatas.find();
-    const getPartTypeData = await nprdPartTypeDatas.find();
+    // Fetch paginated data from each collection
+    const getFrpData = await nprdFrpData.find();
+    const getPartDescData = await nprdPartDescData.find();
+    const getPartTypeData = await nprdPartTypeData.find();
 
     res.status(200).json({
       message: "Get Nprd Data Successfully",
