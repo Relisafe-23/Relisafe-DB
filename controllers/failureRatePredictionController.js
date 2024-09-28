@@ -8,9 +8,9 @@ import {
   createOne,
   updateOne,
 } from "./baseController.js";
-import nprdFrpDatas from "../models/nprdFrp2016Model.js";
-import nprdPartDescDatas from "../models/nprdPartDesc2016Model.js";
-import nprdPartTypeDatas from "../models/nprdPartType2016Model.js";
+import nprdFrpData from "../models/nprdFrp2016Model.js";
+import nprdPartDescData from "../models/nprdPartDesc2016Model.js";
+import nprdPartTypeData from "../models/nprdPartType2016Model.js";
 
 export async function createFailureRatePrediction(req, res, next) {
   try {
