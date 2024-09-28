@@ -495,20 +495,76 @@ export async function getProductFailureRateData(req, res, next) {
 
 export async function getNprd2016Datas(req, res, next) {
   try {
-    const getPartDescData = await nprdPartDescData.find();
     const getPartTypeData = await nprdPartTypeData.find();
-
-    const getFrpData = await nprdFrpData.find();
 
     res.status(200).json({
       message: "Get Nprd Data Successfully",
       data: {
-        getFrpData,
-        getPartDescData,
+        // getFrpData,
+        // getPartDescData,
         getPartTypeData,
       },
     });
   } catch (err) {
+    next(err);
+  }
+}
+export async function getNprd2016Description(req, res, next) {
+  try {
+    // Extract the query parameters from the request
+    const { partTypeId } = req.query;
+
+    // Build a dynamic filter object based on the provided parameters
+    const filter = {};
+
+    if (partTypeId) {
+      filter.PartTypeId = Number(partTypeId);
+    }
+
+    // Query the database with the constructed filter
+    const filteredData = await nprdPartDescData.find(filter);
+
+    // Send the filtered data back to the frontend
+    res.status(200).json({
+      message: "Filtered Nprd Data Successfully",
+      data: filteredData,
+    });
+  } catch (err) {
+    // Handle any errors that occur
+    next(err);
+  }
+}
+
+export async function getNprd2016Value(req, res, next) {
+  try {
+    // Extract the query parameters from the request
+    const { partType2016Nprd, quality, partDescrId } = req.query;
+
+    // Build a dynamic filter object based on the provided parameters
+    const filter = {};
+
+    if (partType2016Nprd) {
+      filter.PartTypeId = Number(partType2016Nprd);
+    }
+
+    if (quality) {
+      filter.Quality = quality;
+    }
+
+    if (partDescrId) {
+      filter.PartDescrId = Number(partDescrId); // Convert to number
+    }
+
+    // Query the database with the constructed filter
+    const filteredData = await nprdFrpData.find(filter);
+
+    // Send the filtered data back to the frontend
+    res.status(200).json({
+      message: "Filtered Nprd Data Successfully",
+      data: filteredData,
+    });
+  } catch (err) {
+    // Handle any errors that occur
     next(err);
   }
 }
