@@ -495,10 +495,10 @@ export async function getProductFailureRateData(req, res, next) {
 
 export async function getNprd2016Datas(req, res, next) {
   try {
-    const getPartDescData = await nprdPartDescDatas.find();
-    const getPartTypeData = await nprdPartTypeDatas.find();
+    const getPartDescData = await nprdPartDescData.find();
+    const getPartTypeData = await nprdPartTypeData.find();
 
-    const getFrpData = await nprdFrpDatas.find();
+    const getFrpData = await nprdFrpData.find();
 
     res.status(200).json({
       message: "Get Nprd Data Successfully",
