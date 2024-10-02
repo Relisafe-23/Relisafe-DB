@@ -7,6 +7,7 @@ import {
   getAllproductBreakdownStructure,
   getProductBreakdownStructure,
   updateProductBreakdownStructure,
+  createPbsRecordFromImportFile,
 } from "../controllers/productBreakdownStructureController.js";
 import { verifyToken } from "../utils/tokenAuth.js";
 
@@ -18,5 +19,7 @@ router
   .route("/:id")
   .get(verifyToken, getProductBreakdownStructure)
   .delete(verifyToken, deleteproductBreakdownStructure);
+
+router.route("/import/record/create").post(createPbsRecordFromImportFile);
 
 export default router;
