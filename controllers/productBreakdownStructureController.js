@@ -483,7 +483,7 @@ export async function createPbsRecordFromImportFile(req, res, next) {
           
               // Update the tree structure in MongoDB
               await productTreeStructure.findByIdAndUpdate(
-                getTreeData._id,
+                getTreeData[0]._id,
                 {
                   $set: {
                     "treeStructure.children.$[elem].productId": parentId,
