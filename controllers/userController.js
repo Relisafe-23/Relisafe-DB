@@ -216,7 +216,7 @@ export async function updateUser(req, res, next) {
           email: data.email,
           password: data.password,
           name: data.name,
-          phone: data.phone,
+          phoneNumber: data.phoneNumber,
           role: data.role,
           confirmPassword: data.confirmPassword,
         };
