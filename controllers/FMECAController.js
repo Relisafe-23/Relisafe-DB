@@ -15,62 +15,62 @@ export async function createFMECA(req, res, next) {
       const sumofFailureModeRadio = finalValue.reduce((accumulator, currentvalue) => accumulator + currentvalue);
       const lastValue = Promise.resolve(sumofFailureModeRadio);
       //if (sumofFailureModeRadio > 1) {
-        res.status(204).json({
-          message: "Failure Mode Radio Alpha Must be Equal to One",
-        });
+      res.status(204).json({
+        message: "Failure Mode Radio Alpha Must be Equal to One",
+      });
       //} else if (sumofFailureModeRadio < 1 || sumofFailureModeRadio === 1) {
-        const existData = await FMECA.find({
-          projectId: data.projectId, productId: data.productId
-        });
-        console.log("existData ....", existData.length)
-        const createData = await FMECA.create({
-          fmecaId: existData.length +1,
-          projectId: data.projectId,
-          companyId: data.companyId,
-          productId: data.productId,
-          operatingPhase: data.operatingPhase,
-          function: data.function,
-          failureMode: data.failureMode,
-          // searchFM: data.searchFM,
-          cause: data.cause,
-          failureModeRatioAlpha: data.failureModeRatioAlpha,
-          detectableMeansDuringOperation: data.detectableMeansDuringOperation,
-          detectableMeansToMaintainer: data.detectableMeansToMaintainer,
-          BuiltInTest: data.BuiltInTest,
-          subSystemEffect: data.subSystemEffect,
-          systemEffect: data.systemEffect,
-          endEffect: data.endEffect,
-          endEffectRatioBeta: data.endEffectRatioBeta,
-          safetyImpact: data.safetyImpact,
-          referenceHazardId: data.referenceHazardId,
-          realibilityImpact: data.realibilityImpact,
-          serviceDisruptionTime: data.serviceDisruptionTime,
-          frequency: data.frequency,
-          severity: data.severity,
-          riskIndex: data.riskIndex,
-          designControl: data.designControl,
-          maintenanceControl: data.maintenanceControl,
-          exportConstraints: data.exportConstraints,
-          immediteActionDuringOperationalPhase: data.immediteActionDuringOperationalPhase,
-          immediteActionDuringNonOperationalPhase: data.immediteActionDuringNonOperationalPhase,
-          userField1: data.userField1,
-          userField2: data.userField2,
-          userField3: data.userField3,
-          userField4: data.userField4,
-          userField5: data.userField5,
-          userField6: data.userField6,
-          userField7: data.userField7,
-          userField8: data.userField8,
-          userField9: data.userField9,
-          userField10: data.userField10,
-        });
-        res.status(201).json({
-          message: "FMECA Created Successfully",
-          data: {
-            createData,
-          },
-        });
-//}
+      const existData = await FMECA.find({
+        projectId: data.projectId, productId: data.productId
+      });
+      console.log("existData ....", existData.length)
+      const createData = await FMECA.create({
+        fmecaId: existData.length + 1,
+        projectId: data.projectId,
+        companyId: data.companyId,
+        productId: data.productId,
+        operatingPhase: data.operatingPhase,
+        function: data.function,
+        failureMode: data.failureMode,
+        // searchFM: data.searchFM,
+        cause: data.cause,
+        failureModeRatioAlpha: data.failureModeRatioAlpha,
+        detectableMeansDuringOperation: data.detectableMeansDuringOperation,
+        detectableMeansToMaintainer: data.detectableMeansToMaintainer,
+        BuiltInTest: data.BuiltInTest,
+        subSystemEffect: data.subSystemEffect,
+        systemEffect: data.systemEffect,
+        endEffect: data.endEffect,
+        endEffectRatioBeta: data.endEffectRatioBeta,
+        safetyImpact: data.safetyImpact,
+        referenceHazardId: data.referenceHazardId,
+        realibilityImpact: data.realibilityImpact,
+        serviceDisruptionTime: data.serviceDisruptionTime,
+        frequency: data.frequency,
+        severity: data.severity,
+        riskIndex: data.riskIndex,
+        designControl: data.designControl,
+        maintenanceControl: data.maintenanceControl,
+        exportConstraints: data.exportConstraints,
+        immediteActionDuringOperationalPhase: data.immediteActionDuringOperationalPhase,
+        immediteActionDuringNonOperationalPhase: data.immediteActionDuringNonOperationalPhase,
+        userField1: data.userField1,
+        userField2: data.userField2,
+        userField3: data.userField3,
+        userField4: data.userField4,
+        userField5: data.userField5,
+        userField6: data.userField6,
+        userField7: data.userField7,
+        userField8: data.userField8,
+        userField9: data.userField9,
+        userField10: data.userField10,
+      });
+      res.status(201).json({
+        message: "FMECA Created Successfully",
+        data: {
+          createData,
+        },
+      });
+      //}
     }
   } catch (error) {
     next(error);
@@ -100,6 +100,9 @@ export async function updateFMECA(req, res, next) {
         totalValue.push(parseFloat(degrementValue.failureModeRatioAlpha));
 
         const sumofFailureModeRadio = totalValue.reduce((total, value) => total - value);
+
+        console.log(sumofFailureModeRadio)
+
         if (sumofFailureModeRadio > 1) {
           res.status(204).json({
             message: "Failure Mode Radio Alpha Must be Equal to One",
@@ -151,7 +154,7 @@ export async function updateFMECA(req, res, next) {
             new: true,
             runValidators: true,
           });
-          res.status(201).json({
+          res.status(200).json({
             message: "FMECA Updated Successfully",
             editDetail,
           });
@@ -192,13 +195,13 @@ export async function getAllFMECA(req, res, next) {
 export async function getFMECA(req, res, next) {
   try {
     const data = req.query;
-    console.log("ata.....",data)
+    console.log("ata.....", data)
 
     const fmecaData = await FMECA.find({ projectId: data.projectId, productId: data.productId })
       .populate("companyId")
       .populate("productId")
       .populate("projectId");
-      console.log("fmeca....", fmecaData)
+    console.log("fmeca....", fmecaData)
 
     res.status(200).json({
       message: "Get FMECA Details Successfully",
