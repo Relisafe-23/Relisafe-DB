@@ -63,9 +63,13 @@ export async function getProductList(req, res, next) {
       .find({ projectId: data.projectId })
       .populate("projectId")
       .populate("companyId");
+   
+console.log("projectId",data.projectId)
     const allProductData = [];
+    console.log("allProduct",allProductData);
     treeStructure.map((list) => {
       const addParentProduct = list.treeStructure;
+      console.log(" addParentProduct", addParentProduct)
       if (addParentProduct.status == "active") {
         allProductData.push(addParentProduct);
       }
@@ -83,13 +87,17 @@ export async function getProductList(req, res, next) {
       }
     });
     
+
     res.status(201).json({
+      
       message: "Get Product List Tree Structure",
       data: allProductData,
     });
   } catch (error) {
     next(error);
   }
+  //  console.log("allProduct",allProductData);    
+
 }
 
 export async function getTreeProductList(req, res, next) {
@@ -101,7 +109,6 @@ export async function getTreeProductList(req, res, next) {
       .populate("companyId");
 
     const allProductData = [];
-
     const processTreeStructure = async (list) => {
       const addParentProduct = list.treeStructure;
       if (addParentProduct.status === "active") {
@@ -133,6 +140,7 @@ export async function getTreeProductList(req, res, next) {
         productData = e;
       }
     });
+
     res.status(201).json({
       message: "Get Product List Tree Structure",
       data: productData,
