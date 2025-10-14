@@ -115,16 +115,17 @@ export async function getAllSparePartsAnalysis(req, res, next) {
         spareTreeData.push(node);
       }
 
-      if (node.children != null) {
+      if (node.children && node.children.length > 0) {
         for (let i = 0; i < node.children.length; i++) {
           findSparePartsSingleProduct(node.children[i]);
         }
       }
+
       async function findSparePartsSingleProduct(node) {
         if (node.status === "active") {
           spareTreeData.push(node);
         }
-        if (node.children != null) {
+        if (node.children && node.children.length > 0) {
           for (let i = 0; i < node.children.length; i++) {
             findSparePartsSingleProduct(node.children[i]);
           }
@@ -135,6 +136,7 @@ export async function getAllSparePartsAnalysis(req, res, next) {
     for (let i = 0; i < spareTreeData.length; i++) {
       findSpareProduct(spareTreeData[i]);
     }
+
     async function findSpareProduct(node) {
       if (node.id == data.productId && node.fr) {
         productFrp = node.fr;
@@ -142,48 +144,58 @@ export async function getAllSparePartsAnalysis(req, res, next) {
     }
 
     const projectDetails = await Project.findById(data.projectId);
-    let productTreeStructureFRvalue = productFrp;
-    let missionTime = sparePartsData ? sparePartsData.deliveryTimeDays : 0;
-    let nonShortProbability = projectDetails.nonShortProbability;
-    //const e = 2.7182818285;
-    const e = 2.7182818284590452353602874713527;
+    const productTreeStructureFRvalue = productFrp / 1e6;
+
+    const missionTime = sparePartsData ? sparePartsData.deliveryTimeDays : 0;
+
+    const nonShortProbability = projectDetails.nonShortProbability;
+
+    const e = Math.E;
+
     const mulitpleofvalue = productTreeStructureFRvalue * missionTime;
+
+    // const value1 = Math.pow(e, -mulitpleofvalue);
     const value1 = Math.pow(e, -mulitpleofvalue);
+
     const valuesofFinal = [];
     let finalValue;
     let sum = 0;
-    for (var i = 0; i <= 50; i++) {
-      function factorial(n) {
-        if (n == 0 || n == 1) {
-          return 1;
-          //recursive case
-        } else {
-          return n * factorial(n - 1);
-        }
-      }
-      let n = i;
-      let factorialvalue = factorial(n);
-      // let n = i;
-      // let factorialvalue = factorial(n);
-      let lamdavalue = Math.pow(mulitpleofvalue, i);
 
-      let value2 = lamdavalue / factorialvalue;
+    for (let i = 0; i <= 50; i++) {
+      function factorial(n) {
+        if (n <= 1) return 1;
+        let result = 1;
+        for (let j = 2; j <= n; j++) {
+          result *= j;
+        }
+        return result;
+      }
+
+      const lamdavalue = Math.pow(mulitpleofvalue, i);
+      const factorialvalue = factorial(i);
+
+      const value2 = lamdavalue / factorialvalue;
+
       finalValue = value1 * value2;
-      sum = sum + finalValue;
+
+      sum += finalValue;
+
       if (sum >= nonShortProbability) {
-        // const spaValue = finalValue;
         valuesofFinal.push(i);
         break;
       }
     }
 
-    let CalculatedSpareQuantity = parseFloat(valuesofFinal);
-    let value = res.status(201).json({
-      message: "Gel All Spare Parts Analysis Details",
+    const CalculatedSpareQuantity =
+      valuesofFinal.length > 0 ? valuesofFinal[0] : 0;
+
+    res.status(201).json({
+      message: "Get All Spare Parts Analysis Details",
       data: sparePartsData,
       CalculatedSpareQuantity,
     });
   } catch (error) {
+    console.error("Error in getAllSparePartsAnalysis:", error);
     next(error);
   }
 }
