@@ -317,14 +317,16 @@ export async function createPbsRecordFromImportFile(req, res, next) {
           mlh,
           children: [],
         };
-
+        console.log("parentNode....",parentNode)
         // Create a new tree structure for the parent product
         const parentTreeStructure = await productTreeStructure.create({
           projectId,
           companyId,
           productId: createdParentProduct._id,
           treeStructure: parentNode,
+        
         });
+          console.log("parentTreeStructure....",parentTreeStructure)
 
         // Push the newly created parent node onto the stack
         parentStack.push({
@@ -466,7 +468,7 @@ export async function createPbsRecordFromImportFile(req, res, next) {
           // Function to iterate over treeStructure and update child productIds
           async function updateParentProductIdforEach(treeData) { 
            // console.log("treeData.......",treeData)           
-            // Ensure treeStructure exists and has children
+          
             if(treeData.children.length > 0){
               treeData.children.map((cList) => {
                // console.log("cList......",cList)

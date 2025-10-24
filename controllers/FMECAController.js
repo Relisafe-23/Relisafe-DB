@@ -80,11 +80,17 @@ export async function createFMECA(req, res, next) {
 export async function updateFMECA(req, res, next) {
   try {
     const data = req.body;
+    
+ 
     const FailureModeRadio = data?.Alldata;
+    
     const FailureModeRadioTrue = data.Alldata ? true : false;
+ 
     const currentFailureModeRadioAlphaValue = data.failureModeRatioAlpha;
-    if (FailureModeRadioTrue === true) {
-      if (data.failureModeRatioAlpha < 1) {
+
+    if (FailureModeRadioTrue) {
+      console.log("if condition")
+      if (data.failureModeRatioAlpha < 1000) {
         const finalValue = [];
         FailureModeRadio?.map((list) => {
           finalValue.push(parseFloat(list.failureModeRatioAlpha));
@@ -101,10 +107,10 @@ export async function updateFMECA(req, res, next) {
 
         const sumofFailureModeRadio = totalValue.reduce((total, value) => total - value);
 
-        console.log(sumofFailureModeRadio)
+        console.log("sumofFailureModeRadio....@@@@@@..",sumofFailureModeRadio)
 
         if (sumofFailureModeRadio > 1) {
-          res.status(204).json({
+          res.status(400).json({
             message: "Failure Mode Radio Alpha Must be Equal to One",
           });
         } else if (sumofFailureModeRadio < 1 || sumofFailureModeRadio === 1) {
@@ -150,10 +156,13 @@ export async function updateFMECA(req, res, next) {
             userField9: data.userField9,
             userField10: data.userField10,
           };
+          console.log("editData123....", editData);
+          console.log("data.fmecaId....", data.fmecaId);
           const editDetail = await FMECA.findByIdAndUpdate(data.fmecaId, editData, {
             new: true,
             runValidators: true,
           });
+          // console.log("editDetail....", editDetail)
           res.status(200).json({
             message: "FMECA Updated Successfully",
             editDetail,
@@ -169,8 +178,11 @@ export async function updateFMECA(req, res, next) {
           message: "Failure Mode Radio Alpha Must be Equal to One",
         });
       }
+    }else{
+      console.log("elseeeeeee")
     }
   } catch (error) {
+    console.log("error....", error)
     next(error);
   }
 }
@@ -195,13 +207,13 @@ export async function getAllFMECA(req, res, next) {
 export async function getFMECA(req, res, next) {
   try {
     const data = req.query;
-    console.log("ata.....", data)
+    
 
     const fmecaData = await FMECA.find({ projectId: data.projectId, productId: data.productId })
       .populate("companyId")
       .populate("productId")
       .populate("projectId");
-    console.log("fmeca....", fmecaData)
+    
 
     res.status(200).json({
       message: "Get FMECA Details Successfully",
