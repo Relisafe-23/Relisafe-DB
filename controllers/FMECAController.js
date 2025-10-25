@@ -15,7 +15,7 @@ export async function createFMECA(req, res, next) {
       const sumofFailureModeRadio = finalValue.reduce((accumulator, currentvalue) => accumulator + currentvalue);
       const lastValue = Promise.resolve(sumofFailureModeRadio);
       //if (sumofFailureModeRadio > 1) {
-      res.status(204).json({
+      res.status(400).json({
         message: "Failure Mode Radio Alpha Must be Equal to One",
       });
       //} else if (sumofFailureModeRadio < 1 || sumofFailureModeRadio === 1) {
@@ -106,8 +106,6 @@ export async function updateFMECA(req, res, next) {
         totalValue.push(parseFloat(degrementValue.failureModeRatioAlpha));
 
         const sumofFailureModeRadio = totalValue.reduce((total, value) => total - value);
-
-        console.log("sumofFailureModeRadio....@@@@@@..",sumofFailureModeRadio)
 
         if (sumofFailureModeRadio > 1) {
           res.status(400).json({
