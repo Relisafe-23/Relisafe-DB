@@ -1510,12 +1510,12 @@ export async function getSparePartsAnanysisReport(req, res, next) {
       const sampleDataPromises = allProductData.map(async (list) => {
         const mttrResult = await MTTRPrediction.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         const sparePartsResult = await SparePartsAnalysis.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         // If no results found, return an object with productId and null values
@@ -1563,12 +1563,12 @@ export async function getSparePartsAnanysisReport(req, res, next) {
       const sampleDataPromises = allProductData.map(async (list) => {
         const mttrResult = await MTTRPrediction.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         const sparePartsResult = await SparePartsAnalysis.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         // If no results found, return an object with productId and null values
@@ -1657,12 +1657,12 @@ export async function getSparePartsAnanysisReport(req, res, next) {
       const sampleDataPromises = allProductData.map(async (list) => {
         const mttrResult = await MTTRPrediction.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         const sparePartsResult = await SparePartsAnalysis.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         // If no results found, return an object with productId and null values
@@ -1715,12 +1715,12 @@ export async function getSparePartsAnanysisReport(req, res, next) {
       const sampleDataPromises = allProductData.map(async (list) => {
         const mttrResult = await MTTRPrediction.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         const sparePartsResult = await SparePartsAnalysis.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         // If no results found, return an object with productId and null values
@@ -1773,12 +1773,12 @@ export async function getSparePartsAnanysisReport(req, res, next) {
       const sampleDataPromises = allProductData.map(async (list) => {
         const mttrResult = await MTTRPrediction.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         const sparePartsResult = await SparePartsAnalysis.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         // If no results found, return an object with productId and null values
@@ -1837,12 +1837,12 @@ export async function getSparePartsAnanysisReport(req, res, next) {
       const sampleDataPromises = allProductData.map(async (list) => {
         const mttrResult = await MTTRPrediction.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         const sparePartsResult = await SparePartsAnalysis.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         // If no results found, return an object with productId and null values
@@ -1920,12 +1920,12 @@ export async function getFmecaReport(req, res, next) {
       const sampleDataPromises = allProductData.map(async (list) => {
         const fmecaData = await FMECA.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         const pmmraData = await PMMRA.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         // If no results found, return an object with productId and null values
@@ -1972,12 +1972,12 @@ export async function getFmecaReport(req, res, next) {
       const sampleDataPromises = allProductData.map(async (list) => {
         const fmecaData = await FMECA.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         const pmmraData = await PMMRA.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         // If no results found, return an object with productId and null values
@@ -2066,12 +2066,12 @@ export async function getFmecaReport(req, res, next) {
       const sampleDataPromises = allProductData.map(async (list) => {
         const fmecaData = await FMECA.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         const pmmraData = await PMMRA.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         // If no results found, return an object with productId and null values
@@ -2123,12 +2123,12 @@ export async function getFmecaReport(req, res, next) {
       const sampleDataPromises = allProductData.map(async (list) => {
         const fmecaData = await FMECA.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         const pmmraData = await PMMRA.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         // If no results found, return an object with productId and null values
@@ -2181,12 +2181,12 @@ export async function getFmecaReport(req, res, next) {
       const sampleDataPromises = allProductData.map(async (list) => {
         const fmecaData = await FMECA.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         const pmmraData = await PMMRA.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         // If no results found, return an object with productId and null values
@@ -2244,12 +2244,12 @@ export async function getFmecaReport(req, res, next) {
       const sampleDataPromises = allProductData.map(async (list) => {
         const fmecaData = await FMECA.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         const pmmraData = await PMMRA.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         // If no results found, return an object with productId and null values
@@ -2328,7 +2328,7 @@ export async function getSafetyReport(req, res, next) {
       const sampleDataPromises = allProductData.map(async (list) => {
         const safetyDatas = await SAFETY.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         // If no results found, return an object with productId and null values
@@ -2375,7 +2375,7 @@ export async function getSafetyReport(req, res, next) {
       const sampleDataPromises = allProductData.map(async (list) => {
         const safetyDatas = await SAFETY.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         // If no results found, return an object with productId and null values
@@ -2462,7 +2462,7 @@ export async function getSafetyReport(req, res, next) {
       const sampleDataPromises = allProductData.map(async (list) => {
         const safetyDatas = await SAFETY.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         // If no results found, return an object with productId and null values
@@ -2514,7 +2514,7 @@ export async function getSafetyReport(req, res, next) {
       const sampleDataPromises = allProductData.map(async (list) => {
         const safetyDatas = await SAFETY.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         // If no results found, return an object with productId and null values
@@ -2566,7 +2566,7 @@ export async function getSafetyReport(req, res, next) {
       const sampleDataPromises = allProductData.map(async (list) => {
         const safetyDatas = await SAFETY.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         // If no results found, return an object with productId and null values
@@ -2623,7 +2623,7 @@ export async function getSafetyReport(req, res, next) {
       const sampleDataPromises = allProductData.map(async (list) => {
         const safetyDatas = await SAFETY.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         // If no results found, return an object with productId and null values
