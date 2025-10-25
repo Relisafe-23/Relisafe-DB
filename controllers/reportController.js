@@ -301,13 +301,13 @@ export async function getReliabilityReport(req, res, next) {
         const childNode = addParentProduct.children;
         getNodeTreeProduct(childNode);
       });
+
       const sampleDataPromises = allProductData.map(async (list) => {
         const result = await FailureRatePrediction.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id, // Add productId filter
         }).populate("productId");
 
-        // If no results found, return an object with productId and null values
         if (!result) {
           return {
             productId: list,
@@ -315,7 +315,6 @@ export async function getReliabilityReport(req, res, next) {
           };
         }
 
-        // If results found, return them
         return {
           productId: list,
           failureRatePrediction: result,
@@ -2344,7 +2343,6 @@ export async function getSafetyReport(req, res, next) {
       // Flatten the sampleData array if it contains nested arrays
       const flattenedSampleData = sampleData.flat();
 
-      console.log("flattenedSampleData 00000", flattenedSampleData);
       res.status(201).json({
         message: "Get Product List Tree Structure",
         data: flattenedSampleData,
@@ -2627,7 +2625,6 @@ export async function getSafetyReport(req, res, next) {
           projectId: data.projectId,
           productId: list.productId,
         }).populate("productId");
-       
 
         // If no results found, return an object with productId and null values
         return {
@@ -2640,7 +2637,6 @@ export async function getSafetyReport(req, res, next) {
       // Flatten the sampleData array if it contains nested arrays
 
       const flattenedSampleData = sampleData.flat();
-      console.log("flattenedSampleData......", flattenedSampleData);
 
       // Grouping based on partType
       const groupedData = flattenedSampleData.reduce((acc, product) => {
