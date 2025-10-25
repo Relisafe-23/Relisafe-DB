@@ -725,12 +725,12 @@ export async function getMaintainabilityReport(req, res, next) {
       const sampleDataPromises = allProductData.map(async (list) => {
         const mttrResult = await MTTRPrediction.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         const pmmraResult = await PMMRA.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         // If no results found, return an object with productId and null values
@@ -778,12 +778,12 @@ export async function getMaintainabilityReport(req, res, next) {
       const sampleDataPromises = allProductData.map(async (list) => {
         const mttrResult = await MTTRPrediction.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         const pmmraResult = await PMMRA.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         // If no results found, return an object with productId and null values
@@ -872,12 +872,12 @@ export async function getMaintainabilityReport(req, res, next) {
       const sampleDataPromises = allProductData.map(async (list) => {
         const mttrResult = await MTTRPrediction.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         const pmmraResult = await PMMRA.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         // If no results found, return an object with productId and null values
@@ -930,12 +930,12 @@ export async function getMaintainabilityReport(req, res, next) {
       const sampleDataPromises = allProductData.map(async (list) => {
         const mttrResult = await MTTRPrediction.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         const pmmraResult = await PMMRA.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         // If no results found, return an object with productId and null values
@@ -988,12 +988,12 @@ export async function getMaintainabilityReport(req, res, next) {
       const sampleDataPromises = allProductData.map(async (list) => {
         const mttrResult = await MTTRPrediction.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         const pmmraResult = await PMMRA.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         // If no results found, return an object with productId and null values
@@ -1052,12 +1052,12 @@ export async function getMaintainabilityReport(req, res, next) {
       const sampleDataPromises = allProductData.map(async (list) => {
         const mttrResult = await MTTRPrediction.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         const pmmraResult = await PMMRA.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         // If no results found, return an object with productId and null values
