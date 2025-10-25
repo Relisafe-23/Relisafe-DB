@@ -51,448 +51,448 @@ export async function createMttrPrediction(req, res, next) {
     let updateData;
 
     async function updateNodeIntoTree(node, nodeId, id) {
-        if (node.id == nodeId) {
-          // if (node.type === "Product") {
-          (node.mct = data.mct),
+      if (node.id == nodeId) {
+        // if (node.type === "Product") {
+        (node.mct = data.mct),
           (node.mlh = data.mlh),
           (node.mttr = data.mttr),
-            (updateData = await productTreeStructure.findByIdAndUpdate(data.treeStructureId, {
-              treeStructure: updateExistTreeStructure,
-            }));
-        } else if (node.children != null) {
-            for (let i = 0; i < node.children.length; i++) {
-              updateNodeIntoTree(node.children[i], nodeId, id);
-            }
-          }
+          (updateData = await productTreeStructure.findByIdAndUpdate(data.treeStructureId, {
+            treeStructure: updateExistTreeStructure,
+          }));
+      } else if (node.children != null) {
+        for (let i = 0; i < node.children.length; i++) {
+          updateNodeIntoTree(node.children[i], nodeId, id);
+        }
       }
+    }
     res.status(201).json({
       message: " Mttr Prediction Updated Successfully",
       editDetail,
     });
-     // find length for update each item after update 
-     let parentNodeData = [];
-     let existTreeLength = await productTreeStructure.findOne({
-       _id: data.treeStructureId,
-     });
-    
-     const treeStructureLength = existTreeLength?.treeStructure;    
-   
-    
-     findMttrNodeLength(treeStructureLength, data.productId, existTreeLength.id);
-     async function findMttrNodeLength(node, nodeId, id) {
-    
-       if (node.status === "active") {
+    // find length for update each item after update 
+    let parentNodeData = [];
+    let existTreeLength = await productTreeStructure.findOne({
+      _id: data.treeStructureId,
+    });
+
+    const treeStructureLength = existTreeLength?.treeStructure;
+
+
+    findMttrNodeLength(treeStructureLength, data.productId, existTreeLength.id);
+    async function findMttrNodeLength(node, nodeId, id) {
+
+      if (node.status === "active") {
         parentNodeData.push(node)
-       }
-       if (node.children != null) {
-         for (let i = 0; i < node.children.length; i++) {
+      }
+      if (node.children != null) {
+        for (let i = 0; i < node.children.length; i++) {
           findMttrChildNodeLength(node.children[i], nodeId, id);
-         }
-       }
-       async function findMttrChildNodeLength(node) {
-         if(node.status === "active"){
+        }
+      }
+      async function findMttrChildNodeLength(node) {
+        if (node.status === "active") {
           parentNodeData.push(node)
-         }
-         if (node.children != null) {
+        }
+        if (node.children != null) {
           for (let i = 0; i < node.children.length; i++) {
             findMttrChildNodeLength(node.children[i], nodeId, id);
           }
         }
-       }
-     }
-   
-     let i=0;
-   
-     while(i < parentNodeData.length){
-    //update MCH and MLH to tree structure product
-    let existTree = await productTreeStructure.findOne({
-      _id: data.treeStructureId,
-    });
-
-    const treeStructure = existTree?.treeStructure;
-
-    updateNodeIntoTree(treeStructure, data.productId, existTree.id);
-    
-    async function updateNodeIntoTree(node, nodeId, id) {
-     
-      if (node.id == data.productId && node.status === "active" && node.children.length === 0) {
-        const frRate = parseInt(node.fr);
-        const mctValue = parseInt(node.mct);
-        let mttrValue = Math.abs((frRate * mctValue) / frRate);
-        if (node.category === "Assembly") {
-          if (node.id == data.productId) {
-            if (mttrValue > 0) {
-              node.mct = node.mct;
-              node.mlh = node.mlh;
-              node.mttr = mttrValue;
-              await productTreeStructure.findByIdAndUpdate(id, {
-                treeStructure: treeStructure,
-              });
-            }
-          }
-        } else {
-          
-          node.mct = node.mct;
-          node.mlh = node.mlh;
-          await productTreeStructure.findByIdAndUpdate(data.treeStructureId, {
-            treeStructure: treeStructure,
-          });
-        }
-      } else if (node.children != null) {
-
-        for (let i = 0; i < node.children.length; i++) {
-          findNodeFromTree(node.children[i], nodeId, id);
-        }
       }
+    }
 
-      async function findNodeFromTree(node, nodeId, id) {
+    let i = 0;
+
+    while (i < parentNodeData.length) {
+      //update MCH and MLH to tree structure product
+      let existTree = await productTreeStructure.findOne({
+        _id: data.treeStructureId,
+      });
+
+      const treeStructure = existTree?.treeStructure;
+
+      updateNodeIntoTree(treeStructure, data.productId, existTree.id);
+
+      async function updateNodeIntoTree(node, nodeId, id) {
+
         if (node.id == data.productId && node.status === "active" && node.children.length === 0) {
-          
-          node.mct = node.mct;
-          node.mlh = node.mlh;
-            await productTreeStructure.findByIdAndUpdate(id, {
+          const frRate = parseInt(node.fr);
+          const mctValue = parseInt(node.mct);
+          let mttrValue = Math.abs((frRate * mctValue) / frRate);
+          if (node.category === "Assembly") {
+            if (node.id == data.productId) {
+              if (mttrValue > 0) {
+                node.mct = node.mct;
+                node.mlh = node.mlh;
+                node.mttr = mttrValue;
+                await productTreeStructure.findByIdAndUpdate(id, {
+                  treeStructure: treeStructure,
+                });
+              }
+            }
+          } else {
+
+            node.mct = node.mct;
+            node.mlh = node.mlh;
+            await productTreeStructure.findByIdAndUpdate(data.treeStructureId, {
               treeStructure: treeStructure,
             });
+          }
         } else if (node.children != null) {
+
           for (let i = 0; i < node.children.length; i++) {
             findNodeFromTree(node.children[i], nodeId, id);
           }
         }
-      }
-    }
-    //update every parent product mttr value
-    let existTree1 = await productTreeStructure.findOne({
-      _id: data.treeStructureId,
-    });
-    const treeStructure1 = existTree1?.treeStructure;
-    let parentNode = [];
-    let totatFrpRate = 0;
 
+        async function findNodeFromTree(node, nodeId, id) {
+          if (node.id == data.productId && node.status === "active" && node.children.length === 0) {
 
-
-    updateMttrNodeIntoTree(treeStructure1, data.productId, existTree1.id);
-    async function updateMttrNodeIntoTree(node, nodeId, id) {
-
-      if (node.status === "active") {
-        parentNode.push(node)
-      }
-
-
-      if (node.children != null) {
-        for (let i = 0; i < node.children.length; i++) {
-          findMttrNodeFromTree(node.children[i], nodeId, id);
+            node.mct = node.mct;
+            node.mlh = node.mlh;
+            await productTreeStructure.findByIdAndUpdate(id, {
+              treeStructure: treeStructure,
+            });
+          } else if (node.children != null) {
+            for (let i = 0; i < node.children.length; i++) {
+              findNodeFromTree(node.children[i], nodeId, id);
+            }
+          }
         }
       }
-      async function findMttrNodeFromTree(node) {
+      //update every parent product mttr value
+      let existTree1 = await productTreeStructure.findOne({
+        _id: data.treeStructureId,
+      });
+      const treeStructure1 = existTree1?.treeStructure;
+      let parentNode = [];
+      let totatFrpRate = 0;
+
+
+
+      updateMttrNodeIntoTree(treeStructure1, data.productId, existTree1.id);
+      async function updateMttrNodeIntoTree(node, nodeId, id) {
+
         if (node.status === "active") {
           parentNode.push(node)
         }
+
+
         if (node.children != null) {
-          for (let i = 0; i < node.children.length; i++) {
-            if (node.children[i].children.length >= 1) {
-              findMttrNodeFromTree(node.children[i], nodeId, id);
-            }
-          }
-        } else if (node.children != null) {
           for (let i = 0; i < node.children.length; i++) {
             findMttrNodeFromTree(node.children[i], nodeId, id);
           }
         }
-      }
-    }
-
-    for (let i = parentNode.length - 1; i >= 0; i--) {
-      calcMttrNodeFromTree(parentNode[i], parentNode[i].id, existTree1.id);
-    };
-
-    async function calcMttrNodeFromTree(node, parentNodeId, id) {
-
-       if (node.children != null) {
-
-        let frMctMulValue = 0;
-        let frMctTotalMulValue = 0;
-        let frMctAddValue = 0;
-        let frMctTotalValue = 0;
-        for (let i = 0; i < node.children.length; i++) {
-
-
-          if (node.children[i].mct && node.children[i].fr && node.children[i].status === "active") {
-            frMctMulValue = node.children[i].fr * node.children[i].mct;
-            frMctAddValue = frMctAddValue + node.children[i].fr;
-            frMctTotalMulValue = frMctTotalMulValue + frMctMulValue;
-            frMctTotalValue = frMctTotalMulValue / frMctAddValue;
-
+        async function findMttrNodeFromTree(node) {
+          if (node.status === "active") {
+            parentNode.push(node)
+          }
+          if (node.children != null) {
+            for (let i = 0; i < node.children.length; i++) {
+              if (node.children[i].children.length >= 1) {
+                findMttrNodeFromTree(node.children[i], nodeId, id);
+              }
+            }
+          } else if (node.children != null) {
+            for (let i = 0; i < node.children.length; i++) {
+              findMttrNodeFromTree(node.children[i], nodeId, id);
+            }
           }
         }
-        for (let i = 0; i < parentNode.length; i++) {
-          updateMttrParentNode(node, parentNodeId, frMctTotalValue, id)
+      }
+
+      for (let i = parentNode.length - 1; i >= 0; i--) {
+        calcMttrNodeFromTree(parentNode[i], parentNode[i].id, existTree1.id);
+      };
+
+      async function calcMttrNodeFromTree(node, parentNodeId, id) {
+
+        if (node.children != null) {
+
+          let frMctMulValue = 0;
+          let frMctTotalMulValue = 0;
+          let frMctAddValue = 0;
+          let frMctTotalValue = 0;
+          for (let i = 0; i < node.children.length; i++) {
+
+
+            if (node.children[i].mct && node.children[i].fr && node.children[i].status === "active") {
+              frMctMulValue = node.children[i].fr * node.children[i].mct;
+              frMctAddValue = frMctAddValue + node.children[i].fr;
+              frMctTotalMulValue = frMctTotalMulValue + frMctMulValue;
+              frMctTotalValue = frMctTotalMulValue / frMctAddValue;
+
+            }
+          }
+          for (let i = 0; i < parentNode.length; i++) {
+            updateMttrParentNode(node, parentNodeId, frMctTotalValue, id)
+          }
+        }
+        async function updateMttrParentNode(node, parentNodeId, frMctTotalValue, id) {
+
+          if (node.id == parentNodeId && node.status === "active" && node.category === "Assembly") {
+            if (frMctTotalValue > 0) {
+
+              node.mct = node.mct;
+              node.mlh = node.mlh;
+              node.mttr = frMctTotalValue;
+              await productTreeStructure.findByIdAndUpdate(id, {
+                treeStructure: treeStructure1,
+              });
+            }
+            const mttrIdData = await mttrPrediction.findOne({
+              projectId: data.projectId, productId: node.id
+            })
+
+
+            if (mttrIdData != null) {
+              const editedMttrData = {
+                mttr: frMctTotalValue,
+              };
+              const editMttrDetail = await mttrPrediction.findByIdAndUpdate(mttrIdData.id, editedMttrData, {
+                new: true,
+                runValidators: true,
+              });
+            }
+          }
         }
       }
-      async function updateMttrParentNode(node, parentNodeId, frMctTotalValue, id) {
-      
-        if (node.id == parentNodeId && node.status === "active"  && node.category === "Assembly") {
-          if (frMctTotalValue > 0) {
-            
-            node.mct = node.mct;
-            node.mlh = node.mlh;
-            node.mttr = frMctTotalValue;
-            await productTreeStructure.findByIdAndUpdate(id, {
-              treeStructure: treeStructure1,
-            });
+
+      //update parent mttr values
+      let existTree2 = await productTreeStructure.findOne({
+        _id: data.treeStructureId,
+      });
+      const treeStructure2 = existTree2?.treeStructure;
+
+
+      let multipleMctValue = 0;
+      let addFrpValue = 0;
+      let totalParentFrpValue = 0;
+
+      let childNodeData = [];
+
+      updateParentMttrNode(treeStructure2, data.productId, existTree2.id);
+
+      async function updateParentMttrNode(node, nodeId, id) {
+
+        if (node.status === "active" && node.children.length === 0) {
+          childNodeData.push(node)
+        }
+
+
+        if (node.children != null) {
+          for (let i = 0; i < node.children.length; i++) {
+            findMttrChildNodeFromTree(node.children[i], nodeId, id);
           }
+        }
+        async function findMttrChildNodeFromTree(node) {
+          if (node.status === "active" && node.children.length === 0) {
+            childNodeData.push(node)
+          }
+          if (node.children != null) {
+            for (let i = 0; i < node.children.length; i++) {
+              findMttrChildNodeFromTree(node.children[i], nodeId, id);
+            }
+          }
+        }
+      }
+
+      for (let i = 0; i < childNodeData.length; i++) {
+
+        if (childNodeData[i].fr && childNodeData[i].mct && childNodeData[i].status === "active") {
+          totalParentFrpValue = totalParentFrpValue + childNodeData[i].fr;
+          multipleMctValue = multipleMctValue + (childNodeData[i].fr * childNodeData[i].mct);
+
+        }
+      };
+
+      // find parent mttr id 
+      let parentMttrTree = await productTreeStructure.findOne({
+        _id: data.treeStructureId,
+      });
+      const parentMttrNode = parentMttrTree?.treeStructure;
+
+      calcMttrParentNodeTree(parentMttrNode, parentMttrNode.id, totalParentFrpValue, multipleMctValue, parentMttrTree.id)
+
+      async function calcMttrParentNodeTree(node, nodeId, totalFrp, totalMctValue, id) {
+
+        let finalMttrValue = totalMctValue / totalFrp;
+
+        if (node.id == nodeId && node.category === "Assembly") {
+          node.mttr = finalMttrValue;
+          node.mct = node.mct;
+          node.mlh = node.mlh;
+
+          await productTreeStructure.findByIdAndUpdate(parentMttrTree.id, {
+            treeStructure: parentMttrNode,
+          });
           const mttrIdData = await mttrPrediction.findOne({
-            projectId: data.projectId, productId: node.id
+            projectId: data.projectId, productId: parentMttrNode.id
           })
-       
-         
+
           if (mttrIdData != null) {
             const editedMttrData = {
-              mttr: frMctTotalValue,
+              mttr: finalMttrValue,
             };
-            const editMttrDetail = await mttrPrediction.findByIdAndUpdate(mttrIdData.id, editedMttrData, {
+            const editMmaxDetail = await mttrPrediction.findByIdAndUpdate(mttrIdData.id, editedMttrData, {
               new: true,
               runValidators: true,
             });
           }
         }
-      }
-    }
-
-    //update parent mttr values
-    let existTree2 = await productTreeStructure.findOne({
-      _id: data.treeStructureId,
-    });
-    const treeStructure2 = existTree2?.treeStructure;
 
 
-    let multipleMctValue = 0;
-    let addFrpValue = 0;
-    let totalParentFrpValue = 0;
-
-    let childNodeData = [];
-
-    updateParentMttrNode(treeStructure2, data.productId, existTree2.id);
-
-    async function updateParentMttrNode(node, nodeId, id) {
-
-      if (node.status === "active" && node.children.length === 0) {
-        childNodeData.push(node)
       }
 
 
-      if (node.children != null) {
-        for (let i = 0; i < node.children.length; i++) {
-          findMttrChildNodeFromTree(node.children[i], nodeId, id);
-        }
-      }
-      async function findMttrChildNodeFromTree(node) {
-        if (node.status === "active" && node.children.length === 0) {
-          childNodeData.push(node)
-        }
-        if (node.children != null) {
-          for (let i = 0; i < node.children.length; i++) {
-              findMttrChildNodeFromTree(node.children[i], nodeId, id);
-          }
-        } 
-      }
-    }
-   
-    for (let i = 0; i < childNodeData.length; i++) {
+      //update product mmax value 
 
-      if (childNodeData[i].fr && childNodeData[i].mct && childNodeData[i].status === "active") {
-        totalParentFrpValue = totalParentFrpValue + childNodeData[i].fr;
-        multipleMctValue = multipleMctValue + (childNodeData[i].fr * childNodeData[i].mct);
 
-      }
-    };
-
-    // find parent mttr id 
-    let parentMttrTree = await productTreeStructure.findOne({
-      _id: data.treeStructureId,
-    });
-    const parentMttrNode = parentMttrTree?.treeStructure;
-   
-    calcMttrParentNodeTree(parentMttrNode,parentMttrNode.id,totalParentFrpValue,  multipleMctValue, parentMttrTree.id) 
-   
-    async function calcMttrParentNodeTree(node, nodeId, totalFrp, totalMctValue, id){
-      
-      let finalMttrValue = totalMctValue/totalFrp;
-    
-    if(node.id == nodeId && node.category === "Assembly"){
-      node.mttr = finalMttrValue;
-      node.mct = node.mct;
-      node.mlh = node.mlh;
-      
-      await productTreeStructure.findByIdAndUpdate(parentMttrTree.id, {
-        treeStructure: parentMttrNode,
+      let existMmaxTree = await productTreeStructure.findOne({
+        _id: data.treeStructureId,
       });
-      const mttrIdData = await mttrPrediction.findOne({
-        projectId: data.projectId, productId: parentMttrNode.id
-      })
-     
-      if (mttrIdData != null) {
-        const editedMttrData = {
-          mttr: finalMttrValue,
-        };
-        const editMmaxDetail = await mttrPrediction.findByIdAndUpdate(mttrIdData.id, editedMttrData, {
-          new: true,
-          runValidators: true,
-        });
-      }
-    }
-     
-      
-    }
-   
+      const mMaxTreeStructure = existMmaxTree?.treeStructure;
+      let mMaxParentNode = [];
 
-    //update product mmax value 
+      updateMmaxNodeIntoTree(mMaxTreeStructure, existMmaxTree.id);
 
-
-    let existMmaxTree = await productTreeStructure.findOne({
-      _id: data.treeStructureId,
-    });
-    const mMaxTreeStructure = existMmaxTree?.treeStructure;
-    let mMaxParentNode = [];
-
-    updateMmaxNodeIntoTree(mMaxTreeStructure, existMmaxTree.id);
-
-    async function updateMmaxNodeIntoTree(node, id) {
-      if (node.status === "active" && node.children.length === 0) {
-        mMaxParentNode.push(node)
-      }
-
-      if (node.children != null) {
-        for (let i = 0; i < node.children.length; i++) {
-          findMmaxNodeFromTree(node.children[i], id);
-        }
-      }
-    async function findMmaxNodeFromTree(node) {
-      
+      async function updateMmaxNodeIntoTree(node, id) {
         if (node.status === "active" && node.children.length === 0) {
-       
           mMaxParentNode.push(node)
         }
+
         if (node.children != null) {
           for (let i = 0; i < node.children.length; i++) {
             findMmaxNodeFromTree(node.children[i], id);
           }
         }
-      }
-    }
- 
-    let mctLogValue = 0;
-    let mctLogCount = 0;
+        async function findMmaxNodeFromTree(node) {
 
-    // find log of mct 
-    for (let i = 0; i < mMaxParentNode.length; i++) {
-      calcMmaxNodeFromTree(mMaxParentNode[i], mMaxParentNode[i].id, existMmaxTree.id);
-    };
+          if (node.status === "active" && node.children.length === 0) {
 
-    async function calcMmaxNodeFromTree(node) {
-      if(node.children.length === 0 && node.mct ){
-        mctLogValue = mctLogValue + Math.log10(node.mct);
-        
-        mctLogCount = mctLogCount + 1;
-      }
-     
-      else if (node.children.length != 0) {
-        for (let i = 0; i < node.children.length; i++) {
-  
-        if (node.children[i].mct && node.children[i].status === "active" && node.children[i].children.length === 0 ) {
-            mctLogValue = mctLogValue + Math.log10(node.children[i].mct);
-            mctLogCount = mctLogCount + 1;
+            mMaxParentNode.push(node)
+          }
+          if (node.children != null) {
+            for (let i = 0; i < node.children.length; i++) {
+              findMmaxNodeFromTree(node.children[i], id);
+            }
           }
         }
       }
-    }
-    let converToPowerValue = Math.pow(mctLogValue, 2)
-    
- 
-    let logMctValue1 = converToPowerValue / mctLogCount;
 
-    
+      let mctLogValue = 0;
+      let mctLogCount = 0;
 
-    // find log of mct 2
-
-    let logMctValueNew = 0;
-    for (let i = 0; i < mMaxParentNode.length; i++) {
-      calcMmaxNodeFromTree2(mMaxParentNode[i], logMctValue1);
-    };
-
-    async function calcMmaxNodeFromTree2(node, logMctValue1) {
-
-      if(node.children.length === 0 && node.mct ){
-        
-        mctLogValue = mctLogValue + Math.log10(node.mct);
-        
-        mctLogCount = mctLogCount + 1;
-        
-      }
-      else if (node.children.length != 0) {
-        
-        for (let i = 0; i < node.children.length; i++) {
-          if (node.children[i].mct && node.children[i].status === "active" && node.children[i].children.length === 0) {
-            let mctLogValue = Math.log10(node.children[i].mct);
-
-            let squreValueofMct = Math.pow(mctLogValue, 2);
-            let addNewValue = squreValueofMct - logMctValue1;
-            logMctValueNew = logMctValueNew + addNewValue;
-
-          }
-        }
-      }
-    }
-   
-    let logMctValue2 = logMctValueNew / (mctLogCount - 1) * (-1);
-
-    
-   
-    let logMctValue2SqrtValue = Math.sqrt(logMctValue2);
-
-   
-   
-
-    // find parent mttr id 
-    let existMttrTree = await productTreeStructure.findOne({
-      _id: data.treeStructureId,
-    });
-    const mMttrTreeStructure = existMttrTree?.treeStructure;
-
-    // find pi value of this project 
-    let projectPiValue = await project.findOne({
-      _id: data.projectId,
-
-    });
-    let parentMttrValue = mMttrTreeStructure.mttr;
-    let parentMttrLogValue = Math.log10(parentMttrValue);
-    
-    let piValue = projectPiValue.mMaxValue;
-    
-    let finalValue = piValue * logMctValue2SqrtValue;
-    
-    let finalMmaxValue = parentMttrLogValue + finalValue;
-    
-
-    
-
-    const mttrIdData = await mttrPrediction.findOne({
-      projectId: data.projectId, productId: mMttrTreeStructure.id
-    })
-    if (mttrIdData != null) {
-      let newMmax = finalMmaxValue ? finalMmaxValue : 0;
-
-      let finalMmax = mMaxParentNode.length >= 2 ? newMmax : 0;
-      
-      const editedMmaxData = {
-        mMax: finalMmax,
+      // find log of mct 
+      for (let i = 0; i < mMaxParentNode.length; i++) {
+        calcMmaxNodeFromTree(mMaxParentNode[i], mMaxParentNode[i].id, existMmaxTree.id);
       };
-      const editMmaxDetail = await mttrPrediction.findByIdAndUpdate(mttrIdData.id, editedMmaxData, {
-        new: true,
-        runValidators: true,
+
+      async function calcMmaxNodeFromTree(node) {
+        if (node.children.length === 0 && node.mct) {
+          mctLogValue = mctLogValue + Math.log10(node.mct);
+
+          mctLogCount = mctLogCount + 1;
+        }
+
+        else if (node.children.length != 0) {
+          for (let i = 0; i < node.children.length; i++) {
+
+            if (node.children[i].mct && node.children[i].status === "active" && node.children[i].children.length === 0) {
+              mctLogValue = mctLogValue + Math.log10(node.children[i].mct);
+              mctLogCount = mctLogCount + 1;
+            }
+          }
+        }
+      }
+      let converToPowerValue = Math.pow(mctLogValue, 2)
+
+
+      let logMctValue1 = converToPowerValue / mctLogCount;
+
+
+
+      // find log of mct 2
+
+      let logMctValueNew = 0;
+      for (let i = 0; i < mMaxParentNode.length; i++) {
+        calcMmaxNodeFromTree2(mMaxParentNode[i], logMctValue1);
+      };
+
+      async function calcMmaxNodeFromTree2(node, logMctValue1) {
+
+        if (node.children.length === 0 && node.mct) {
+
+          mctLogValue = mctLogValue + Math.log10(node.mct);
+
+          mctLogCount = mctLogCount + 1;
+
+        }
+        else if (node.children.length != 0) {
+
+          for (let i = 0; i < node.children.length; i++) {
+            if (node.children[i].mct && node.children[i].status === "active" && node.children[i].children.length === 0) {
+              let mctLogValue = Math.log10(node.children[i].mct);
+
+              let squreValueofMct = Math.pow(mctLogValue, 2);
+              let addNewValue = squreValueofMct - logMctValue1;
+              logMctValueNew = logMctValueNew + addNewValue;
+
+            }
+          }
+        }
+      }
+
+      let logMctValue2 = logMctValueNew / (mctLogCount - 1) * (-1);
+
+
+
+      let logMctValue2SqrtValue = Math.sqrt(logMctValue2);
+
+
+
+
+      // find parent mttr id 
+      let existMttrTree = await productTreeStructure.findOne({
+        _id: data.treeStructureId,
       });
+      const mMttrTreeStructure = existMttrTree?.treeStructure;
+
+      // find pi value of this project 
+      let projectPiValue = await project.findOne({
+        _id: data.projectId,
+
+      });
+      let parentMttrValue = mMttrTreeStructure.mttr;
+      let parentMttrLogValue = Math.log10(parentMttrValue);
+
+      let piValue = projectPiValue.mMaxValue;
+
+      let finalValue = piValue * logMctValue2SqrtValue;
+
+      let finalMmaxValue = parentMttrLogValue + finalValue;
+
+
+
+
+      const mttrIdData = await mttrPrediction.findOne({
+        projectId: data.projectId, productId: mMttrTreeStructure.id
+      })
+      if (mttrIdData != null) {
+        let newMmax = finalMmaxValue ? finalMmaxValue : 0;
+
+        let finalMmax = mMaxParentNode.length >= 2 ? newMmax : 0;
+
+        const editedMmaxData = {
+          mMax: finalMmax,
+        };
+        const editMmaxDetail = await mttrPrediction.findByIdAndUpdate(mttrIdData.id, editedMmaxData, {
+          new: true,
+          runValidators: true,
+        });
+      }
+      i++;
     }
- i++;
-  }
   } catch (error) {
     next(error);
   }
@@ -502,7 +502,8 @@ export async function updateMttrPrediction(req, res, next) {
   try {
     const data = req.body;
 
-   
+
+
 
 
     const editedData = {
@@ -545,448 +546,448 @@ export async function updateMttrPrediction(req, res, next) {
     let updateData;
 
     async function updateNodeIntoTree(node, nodeId, id) {
-        if (node.id == nodeId) {
-          // if (node.type === "Product") {
-          (node.mct = data.mct),
+      if (node.id == nodeId) {
+        // if (node.type === "Product") {
+        (node.mct = data.mct),
           (node.mlh = data.mlh),
           (node.mttr = data.mttr),
-            (updateData = await productTreeStructure.findByIdAndUpdate(data.treeStructureId, {
-              treeStructure: updateExistTreeStructure,
-            }));
-        } else if (node.children != null) {
-            for (let i = 0; i < node.children.length; i++) {
-              updateNodeIntoTree(node.children[i], nodeId, id);
-            }
-          }
+          (updateData = await productTreeStructure.findByIdAndUpdate(data.treeStructureId, {
+            treeStructure: updateExistTreeStructure,
+          }));
+      } else if (node.children != null) {
+        for (let i = 0; i < node.children.length; i++) {
+          updateNodeIntoTree(node.children[i], nodeId, id);
+        }
       }
+    }
     res.status(201).json({
       message: " Mttr Prediction Updated Successfully",
       editDetail,
     });
-     // find length for update each item after update 
-     let parentNodeData = [];
-     let existTreeLength = await productTreeStructure.findOne({
-       _id: data.treeStructureId,
-     });
-    
-     const treeStructureLength = existTreeLength?.treeStructure;    
-   
-    
-     findMttrNodeLength(treeStructureLength, data.productId, existTreeLength.id);
-     async function findMttrNodeLength(node, nodeId, id) {
-    
-       if (node.status === "active") {
+    // find length for update each item after update 
+    let parentNodeData = [];
+    let existTreeLength = await productTreeStructure.findOne({
+      _id: data.treeStructureId,
+    });
+
+    const treeStructureLength = existTreeLength?.treeStructure;
+
+
+    findMttrNodeLength(treeStructureLength, data.productId, existTreeLength.id);
+    async function findMttrNodeLength(node, nodeId, id) {
+
+      if (node.status === "active") {
         parentNodeData.push(node)
-       }
-       if (node.children != null) {
-         for (let i = 0; i < node.children.length; i++) {
+      }
+      if (node.children != null) {
+        for (let i = 0; i < node.children.length; i++) {
           findMttrChildNodeLength(node.children[i], nodeId, id);
-         }
-       }
-       async function findMttrChildNodeLength(node) {
-         if(node.status === "active"){
+        }
+      }
+      async function findMttrChildNodeLength(node) {
+        if (node.status === "active") {
           parentNodeData.push(node)
-         }
-         if (node.children != null) {
+        }
+        if (node.children != null) {
           for (let i = 0; i < node.children.length; i++) {
             findMttrChildNodeLength(node.children[i], nodeId, id);
           }
         }
-       }
-     }
-   
-     let i=0;
-   
-     while(i < parentNodeData.length){
-    //update MCH and MLH to tree structure product
-    let existTree = await productTreeStructure.findOne({
-      _id: data.treeStructureId,
-    });
-
-    const treeStructure = existTree?.treeStructure;
-
-    updateNodeIntoTree(treeStructure, data.productId, existTree.id);
-    
-    async function updateNodeIntoTree(node, nodeId, id) {
-     
-      if (node.id == data.productId && node.status === "active" && node.children.length === 0) {
-        const frRate = parseInt(node.fr);
-        const mctValue = parseInt(node.mct);
-        let mttrValue = Math.abs((frRate * mctValue) / frRate);
-        if (node.category === "Assembly") {
-          if (node.id == data.productId) {
-            if (mttrValue > 0) {
-              node.mct = node.mct;
-              node.mlh = node.mlh;
-              node.mttr = mttrValue;
-              await productTreeStructure.findByIdAndUpdate(id, {
-                treeStructure: treeStructure,
-              });
-            }
-          }
-        } else {
-          
-          node.mct = node.mct;
-          node.mlh = node.mlh;
-          await productTreeStructure.findByIdAndUpdate(data.treeStructureId, {
-            treeStructure: treeStructure,
-          });
-        }
-      } else if (node.children != null) {
-
-        for (let i = 0; i < node.children.length; i++) {
-          findNodeFromTree(node.children[i], nodeId, id);
-        }
       }
+    }
 
-      async function findNodeFromTree(node, nodeId, id) {
+    let i = 0;
+
+    while (i < parentNodeData.length) {
+      //update MCH and MLH to tree structure product
+      let existTree = await productTreeStructure.findOne({
+        _id: data.treeStructureId,
+      });
+
+      const treeStructure = existTree?.treeStructure;
+
+      updateNodeIntoTree(treeStructure, data.productId, existTree.id);
+
+      async function updateNodeIntoTree(node, nodeId, id) {
+
         if (node.id == data.productId && node.status === "active" && node.children.length === 0) {
-          
-          node.mct = node.mct;
-          node.mlh = node.mlh;
-            await productTreeStructure.findByIdAndUpdate(id, {
+          const frRate = parseInt(node.fr);
+          const mctValue = parseInt(node.mct);
+          let mttrValue = Math.abs((frRate * mctValue) / frRate);
+          if (node.category === "Assembly") {
+            if (node.id == data.productId) {
+              if (mttrValue > 0) {
+                node.mct = node.mct;
+                node.mlh = node.mlh;
+                node.mttr = mttrValue;
+                await productTreeStructure.findByIdAndUpdate(id, {
+                  treeStructure: treeStructure,
+                });
+              }
+            }
+          } else {
+
+            node.mct = node.mct;
+            node.mlh = node.mlh;
+            await productTreeStructure.findByIdAndUpdate(data.treeStructureId, {
               treeStructure: treeStructure,
             });
+          }
         } else if (node.children != null) {
+
           for (let i = 0; i < node.children.length; i++) {
             findNodeFromTree(node.children[i], nodeId, id);
           }
         }
-      }
-    }
-    //update every parent product mttr value
-    let existTree1 = await productTreeStructure.findOne({
-      _id: data.treeStructureId,
-    });
-    const treeStructure1 = existTree1?.treeStructure;
-    let parentNode = [];
-    let totatFrpRate = 0;
 
+        async function findNodeFromTree(node, nodeId, id) {
+          if (node.id == data.productId && node.status === "active" && node.children.length === 0) {
 
-
-    updateMttrNodeIntoTree(treeStructure1, data.productId, existTree1.id);
-    async function updateMttrNodeIntoTree(node, nodeId, id) {
-
-      if (node.status === "active") {
-        parentNode.push(node)
-      }
-
-
-      if (node.children != null) {
-        for (let i = 0; i < node.children.length; i++) {
-          findMttrNodeFromTree(node.children[i], nodeId, id);
+            node.mct = node.mct;
+            node.mlh = node.mlh;
+            await productTreeStructure.findByIdAndUpdate(id, {
+              treeStructure: treeStructure,
+            });
+          } else if (node.children != null) {
+            for (let i = 0; i < node.children.length; i++) {
+              findNodeFromTree(node.children[i], nodeId, id);
+            }
+          }
         }
       }
-      async function findMttrNodeFromTree(node) {
+      //update every parent product mttr value
+      let existTree1 = await productTreeStructure.findOne({
+        _id: data.treeStructureId,
+      });
+      const treeStructure1 = existTree1?.treeStructure;
+      let parentNode = [];
+      let totatFrpRate = 0;
+
+
+
+      updateMttrNodeIntoTree(treeStructure1, data.productId, existTree1.id);
+      async function updateMttrNodeIntoTree(node, nodeId, id) {
+
         if (node.status === "active") {
           parentNode.push(node)
         }
+
+
         if (node.children != null) {
-          for (let i = 0; i < node.children.length; i++) {
-            if (node.children[i].children.length >= 1) {
-              findMttrNodeFromTree(node.children[i], nodeId, id);
-            }
-          }
-        } else if (node.children != null) {
           for (let i = 0; i < node.children.length; i++) {
             findMttrNodeFromTree(node.children[i], nodeId, id);
           }
         }
-      }
-    }
-
-    for (let i = parentNode.length - 1; i >= 0; i--) {
-      calcMttrNodeFromTree(parentNode[i], parentNode[i].id, existTree1.id);
-    };
-
-    async function calcMttrNodeFromTree(node, parentNodeId, id) {
-
-       if (node.children != null) {
-
-        let frMctMulValue = 0;
-        let frMctTotalMulValue = 0;
-        let frMctAddValue = 0;
-        let frMctTotalValue = 0;
-        for (let i = 0; i < node.children.length; i++) {
-
-
-          if (node.children[i].mct && node.children[i].fr && node.children[i].status === "active") {
-            frMctMulValue = node.children[i].fr * node.children[i].mct;
-            frMctAddValue = frMctAddValue + node.children[i].fr;
-            frMctTotalMulValue = frMctTotalMulValue + frMctMulValue;
-            frMctTotalValue = frMctTotalMulValue / frMctAddValue;
-
+        async function findMttrNodeFromTree(node) {
+          if (node.status === "active") {
+            parentNode.push(node)
+          }
+          if (node.children != null) {
+            for (let i = 0; i < node.children.length; i++) {
+              if (node.children[i].children.length >= 1) {
+                findMttrNodeFromTree(node.children[i], nodeId, id);
+              }
+            }
+          } else if (node.children != null) {
+            for (let i = 0; i < node.children.length; i++) {
+              findMttrNodeFromTree(node.children[i], nodeId, id);
+            }
           }
         }
-        for (let i = 0; i < parentNode.length; i++) {
-          updateMttrParentNode(node, parentNodeId, frMctTotalValue, id)
+      }
+
+      for (let i = parentNode.length - 1; i >= 0; i--) {
+        calcMttrNodeFromTree(parentNode[i], parentNode[i].id, existTree1.id);
+      };
+
+      async function calcMttrNodeFromTree(node, parentNodeId, id) {
+
+        if (node.children != null) {
+
+          let frMctMulValue = 0;
+          let frMctTotalMulValue = 0;
+          let frMctAddValue = 0;
+          let frMctTotalValue = 0;
+          for (let i = 0; i < node.children.length; i++) {
+
+
+            if (node.children[i].mct && node.children[i].fr && node.children[i].status === "active") {
+              frMctMulValue = node.children[i].fr * node.children[i].mct;
+              frMctAddValue = frMctAddValue + node.children[i].fr;
+              frMctTotalMulValue = frMctTotalMulValue + frMctMulValue;
+              frMctTotalValue = frMctTotalMulValue / frMctAddValue;
+
+            }
+          }
+          for (let i = 0; i < parentNode.length; i++) {
+            updateMttrParentNode(node, parentNodeId, frMctTotalValue, id)
+          }
+        }
+        async function updateMttrParentNode(node, parentNodeId, frMctTotalValue, id) {
+
+          if (node.id == parentNodeId && node.status === "active" && node.category === "Assembly") {
+            if (frMctTotalValue > 0) {
+
+              node.mct = node.mct;
+              node.mlh = node.mlh;
+              node.mttr = frMctTotalValue;
+              await productTreeStructure.findByIdAndUpdate(id, {
+                treeStructure: treeStructure1,
+              });
+            }
+            const mttrIdData = await mttrPrediction.findOne({
+              projectId: data.projectId, productId: node.id
+            })
+
+
+            if (mttrIdData != null) {
+              const editedMttrData = {
+                mttr: frMctTotalValue,
+              };
+              const editMttrDetail = await mttrPrediction.findByIdAndUpdate(mttrIdData.id, editedMttrData, {
+                new: true,
+                runValidators: true,
+              });
+            }
+          }
         }
       }
-      async function updateMttrParentNode(node, parentNodeId, frMctTotalValue, id) {
-      
-        if (node.id == parentNodeId && node.status === "active"  && node.category === "Assembly") {
-          if (frMctTotalValue > 0) {
-            
-            node.mct = node.mct;
-            node.mlh = node.mlh;
-            node.mttr = frMctTotalValue;
-            await productTreeStructure.findByIdAndUpdate(id, {
-              treeStructure: treeStructure1,
-            });
+
+      //update parent mttr values
+      let existTree2 = await productTreeStructure.findOne({
+        _id: data.treeStructureId,
+      });
+      const treeStructure2 = existTree2?.treeStructure;
+
+
+      let multipleMctValue = 0;
+      let addFrpValue = 0;
+      let totalParentFrpValue = 0;
+
+      let childNodeData = [];
+
+      updateParentMttrNode(treeStructure2, data.productId, existTree2.id);
+
+      async function updateParentMttrNode(node, nodeId, id) {
+
+        if (node.status === "active" && node.children.length === 0) {
+          childNodeData.push(node)
+        }
+
+
+        if (node.children != null) {
+          for (let i = 0; i < node.children.length; i++) {
+            findMttrChildNodeFromTree(node.children[i], nodeId, id);
           }
+        }
+        async function findMttrChildNodeFromTree(node) {
+          if (node.status === "active" && node.children.length === 0) {
+            childNodeData.push(node)
+          }
+          if (node.children != null) {
+            for (let i = 0; i < node.children.length; i++) {
+              findMttrChildNodeFromTree(node.children[i], nodeId, id);
+            }
+          }
+        }
+      }
+
+      for (let i = 0; i < childNodeData.length; i++) {
+
+        if (childNodeData[i].fr && childNodeData[i].mct && childNodeData[i].status === "active") {
+          totalParentFrpValue = totalParentFrpValue + childNodeData[i].fr;
+          multipleMctValue = multipleMctValue + (childNodeData[i].fr * childNodeData[i].mct);
+
+        }
+      };
+
+      // find parent mttr id 
+      let parentMttrTree = await productTreeStructure.findOne({
+        _id: data.treeStructureId,
+      });
+      const parentMttrNode = parentMttrTree?.treeStructure;
+
+      calcMttrParentNodeTree(parentMttrNode, parentMttrNode.id, totalParentFrpValue, multipleMctValue, parentMttrTree.id)
+
+      async function calcMttrParentNodeTree(node, nodeId, totalFrp, totalMctValue, id) {
+
+        let finalMttrValue = totalMctValue / totalFrp;
+
+        if (node.id == nodeId && node.category === "Assembly") {
+          node.mttr = finalMttrValue;
+          node.mct = node.mct;
+          node.mlh = node.mlh;
+
+          await productTreeStructure.findByIdAndUpdate(parentMttrTree.id, {
+            treeStructure: parentMttrNode,
+          });
           const mttrIdData = await mttrPrediction.findOne({
-            projectId: data.projectId, productId: node.id
+            projectId: data.projectId, productId: parentMttrNode.id
           })
-       
-         
+
           if (mttrIdData != null) {
             const editedMttrData = {
-              mttr: frMctTotalValue,
+              mttr: finalMttrValue,
             };
-            const editMttrDetail = await mttrPrediction.findByIdAndUpdate(mttrIdData.id, editedMttrData, {
+            const editMmaxDetail = await mttrPrediction.findByIdAndUpdate(mttrIdData.id, editedMttrData, {
               new: true,
               runValidators: true,
             });
           }
         }
-      }
-    }
-
-    //update parent mttr values
-    let existTree2 = await productTreeStructure.findOne({
-      _id: data.treeStructureId,
-    });
-    const treeStructure2 = existTree2?.treeStructure;
 
 
-    let multipleMctValue = 0;
-    let addFrpValue = 0;
-    let totalParentFrpValue = 0;
-
-    let childNodeData = [];
-
-    updateParentMttrNode(treeStructure2, data.productId, existTree2.id);
-
-    async function updateParentMttrNode(node, nodeId, id) {
-
-      if (node.status === "active" && node.children.length === 0) {
-        childNodeData.push(node)
       }
 
 
-      if (node.children != null) {
-        for (let i = 0; i < node.children.length; i++) {
-          findMttrChildNodeFromTree(node.children[i], nodeId, id);
-        }
-      }
-      async function findMttrChildNodeFromTree(node) {
-        if (node.status === "active" && node.children.length === 0) {
-          childNodeData.push(node)
-        }
-        if (node.children != null) {
-          for (let i = 0; i < node.children.length; i++) {
-              findMttrChildNodeFromTree(node.children[i], nodeId, id);
-          }
-        } 
-      }
-    }
-   
-    for (let i = 0; i < childNodeData.length; i++) {
+      //update product mmax value 
 
-      if (childNodeData[i].fr && childNodeData[i].mct && childNodeData[i].status === "active") {
-        totalParentFrpValue = totalParentFrpValue + childNodeData[i].fr;
-        multipleMctValue = multipleMctValue + (childNodeData[i].fr * childNodeData[i].mct);
 
-      }
-    };
-
-    // find parent mttr id 
-    let parentMttrTree = await productTreeStructure.findOne({
-      _id: data.treeStructureId,
-    });
-    const parentMttrNode = parentMttrTree?.treeStructure;
-   
-    calcMttrParentNodeTree(parentMttrNode,parentMttrNode.id,totalParentFrpValue,  multipleMctValue, parentMttrTree.id) 
-   
-    async function calcMttrParentNodeTree(node, nodeId, totalFrp, totalMctValue, id){
-      
-      let finalMttrValue = totalMctValue/totalFrp;
-    
-    if(node.id == nodeId && node.category === "Assembly"){
-      node.mttr = finalMttrValue;
-      node.mct = node.mct;
-      node.mlh = node.mlh;
-      
-      await productTreeStructure.findByIdAndUpdate(parentMttrTree.id, {
-        treeStructure: parentMttrNode,
+      let existMmaxTree = await productTreeStructure.findOne({
+        _id: data.treeStructureId,
       });
-      const mttrIdData = await mttrPrediction.findOne({
-        projectId: data.projectId, productId: parentMttrNode.id
-      })
-     
-      if (mttrIdData != null) {
-        const editedMttrData = {
-          mttr: finalMttrValue,
-        };
-        const editMmaxDetail = await mttrPrediction.findByIdAndUpdate(mttrIdData.id, editedMttrData, {
-          new: true,
-          runValidators: true,
-        });
-      }
-    }
-     
-      
-    }
-   
+      const mMaxTreeStructure = existMmaxTree?.treeStructure;
+      let mMaxParentNode = [];
 
-    //update product mmax value 
+      updateMmaxNodeIntoTree(mMaxTreeStructure, existMmaxTree.id);
 
-
-    let existMmaxTree = await productTreeStructure.findOne({
-      _id: data.treeStructureId,
-    });
-    const mMaxTreeStructure = existMmaxTree?.treeStructure;
-    let mMaxParentNode = [];
-
-    updateMmaxNodeIntoTree(mMaxTreeStructure, existMmaxTree.id);
-
-    async function updateMmaxNodeIntoTree(node, id) {
-      if (node.status === "active" && node.children.length === 0) {
-        mMaxParentNode.push(node)
-      }
-
-      if (node.children != null) {
-        for (let i = 0; i < node.children.length; i++) {
-          findMmaxNodeFromTree(node.children[i], id);
-        }
-      }
-    async function findMmaxNodeFromTree(node) {
-      
+      async function updateMmaxNodeIntoTree(node, id) {
         if (node.status === "active" && node.children.length === 0) {
-       
           mMaxParentNode.push(node)
         }
+
         if (node.children != null) {
           for (let i = 0; i < node.children.length; i++) {
             findMmaxNodeFromTree(node.children[i], id);
           }
         }
-      }
-    }
- 
-    let mctLogValue = 0;
-    let mctLogCount = 0;
+        async function findMmaxNodeFromTree(node) {
 
-    // find log of mct 
-    for (let i = 0; i < mMaxParentNode.length; i++) {
-      calcMmaxNodeFromTree(mMaxParentNode[i], mMaxParentNode[i].id, existMmaxTree.id);
-    };
+          if (node.status === "active" && node.children.length === 0) {
 
-    async function calcMmaxNodeFromTree(node) {
-      if(node.children.length === 0 && node.mct ){
-        mctLogValue = mctLogValue + Math.log10(node.mct);
-        
-        mctLogCount = mctLogCount + 1;
-      }
-     
-      else if (node.children.length != 0) {
-        for (let i = 0; i < node.children.length; i++) {
-  
-        if (node.children[i].mct && node.children[i].status === "active" && node.children[i].children.length === 0 ) {
-            mctLogValue = mctLogValue + Math.log10(node.children[i].mct);
-            mctLogCount = mctLogCount + 1;
+            mMaxParentNode.push(node)
+          }
+          if (node.children != null) {
+            for (let i = 0; i < node.children.length; i++) {
+              findMmaxNodeFromTree(node.children[i], id);
+            }
           }
         }
       }
-    }
-    let converToPowerValue = Math.pow(mctLogValue, 2)
-    
- 
-    let logMctValue1 = converToPowerValue / mctLogCount;
 
-    
+      let mctLogValue = 0;
+      let mctLogCount = 0;
 
-    // find log of mct 2
-
-    let logMctValueNew = 0;
-    for (let i = 0; i < mMaxParentNode.length; i++) {
-      calcMmaxNodeFromTree2(mMaxParentNode[i], logMctValue1);
-    };
-
-    async function calcMmaxNodeFromTree2(node, logMctValue1) {
-
-      if(node.children.length === 0 && node.mct ){
-        
-        mctLogValue = mctLogValue + Math.log10(node.mct);
-        
-        mctLogCount = mctLogCount + 1;
-        
-      }
-      else if (node.children.length != 0) {
-        
-        for (let i = 0; i < node.children.length; i++) {
-          if (node.children[i].mct && node.children[i].status === "active" && node.children[i].children.length === 0) {
-            let mctLogValue = Math.log10(node.children[i].mct);
-
-            let squreValueofMct = Math.pow(mctLogValue, 2);
-            let addNewValue = squreValueofMct - logMctValue1;
-            logMctValueNew = logMctValueNew + addNewValue;
-
-          }
-        }
-      }
-    }
-   
-    let logMctValue2 = logMctValueNew / (mctLogCount - 1) * (-1);
-
-    
-   
-    let logMctValue2SqrtValue = Math.sqrt(logMctValue2);
-
-   
-   
-
-    // find parent mttr id 
-    let existMttrTree = await productTreeStructure.findOne({
-      _id: data.treeStructureId,
-    });
-    const mMttrTreeStructure = existMttrTree?.treeStructure;
-
-    // find pi value of this project 
-    let projectPiValue = await project.findOne({
-      _id: data.projectId,
-
-    });
-    let parentMttrValue = mMttrTreeStructure.mttr;
-    let parentMttrLogValue = Math.log10(parentMttrValue);
-    
-    let piValue = projectPiValue.mMaxValue;
-    
-    let finalValue = piValue * logMctValue2SqrtValue;
-    
-    let finalMmaxValue = parentMttrLogValue + finalValue;
-    
-
-    
-
-    const mttrIdData = await mttrPrediction.findOne({
-      projectId: data.projectId, productId: mMttrTreeStructure.id
-    })
-    if (mttrIdData != null) {
-      let newMmax = finalMmaxValue ? finalMmaxValue : 0;
-
-      let finalMmax = mMaxParentNode.length >= 2 ? newMmax : 0;
-      
-      const editedMmaxData = {
-        mMax: finalMmax,
+      // find log of mct 
+      for (let i = 0; i < mMaxParentNode.length; i++) {
+        calcMmaxNodeFromTree(mMaxParentNode[i], mMaxParentNode[i].id, existMmaxTree.id);
       };
-      const editMmaxDetail = await mttrPrediction.findByIdAndUpdate(mttrIdData.id, editedMmaxData, {
-        new: true,
-        runValidators: true,
+
+      async function calcMmaxNodeFromTree(node) {
+        if (node.children.length === 0 && node.mct) {
+          mctLogValue = mctLogValue + Math.log10(node.mct);
+
+          mctLogCount = mctLogCount + 1;
+        }
+
+        else if (node.children.length != 0) {
+          for (let i = 0; i < node.children.length; i++) {
+
+            if (node.children[i].mct && node.children[i].status === "active" && node.children[i].children.length === 0) {
+              mctLogValue = mctLogValue + Math.log10(node.children[i].mct);
+              mctLogCount = mctLogCount + 1;
+            }
+          }
+        }
+      }
+      let converToPowerValue = Math.pow(mctLogValue, 2)
+
+
+      let logMctValue1 = converToPowerValue / mctLogCount;
+
+
+
+      // find log of mct 2
+
+      let logMctValueNew = 0;
+      for (let i = 0; i < mMaxParentNode.length; i++) {
+        calcMmaxNodeFromTree2(mMaxParentNode[i], logMctValue1);
+      };
+
+      async function calcMmaxNodeFromTree2(node, logMctValue1) {
+
+        if (node.children.length === 0 && node.mct) {
+
+          mctLogValue = mctLogValue + Math.log10(node.mct);
+
+          mctLogCount = mctLogCount + 1;
+
+        }
+        else if (node.children.length != 0) {
+
+          for (let i = 0; i < node.children.length; i++) {
+            if (node.children[i].mct && node.children[i].status === "active" && node.children[i].children.length === 0) {
+              let mctLogValue = Math.log10(node.children[i].mct);
+
+              let squreValueofMct = Math.pow(mctLogValue, 2);
+              let addNewValue = squreValueofMct - logMctValue1;
+              logMctValueNew = logMctValueNew + addNewValue;
+
+            }
+          }
+        }
+      }
+
+      let logMctValue2 = logMctValueNew / (mctLogCount - 1) * (-1);
+
+
+
+      let logMctValue2SqrtValue = Math.sqrt(logMctValue2);
+
+
+
+
+      // find parent mttr id 
+      let existMttrTree = await productTreeStructure.findOne({
+        _id: data.treeStructureId,
       });
+      const mMttrTreeStructure = existMttrTree?.treeStructure;
+
+      // find pi value of this project 
+      let projectPiValue = await project.findOne({
+        _id: data.projectId,
+
+      });
+      let parentMttrValue = mMttrTreeStructure.mttr;
+      let parentMttrLogValue = Math.log10(parentMttrValue);
+
+      let piValue = projectPiValue.mMaxValue;
+
+      let finalValue = piValue * logMctValue2SqrtValue;
+
+      let finalMmaxValue = parentMttrLogValue + finalValue;
+
+
+
+
+      const mttrIdData = await mttrPrediction.findOne({
+        projectId: data.projectId, productId: mMttrTreeStructure.id
+      })
+      if (mttrIdData != null) {
+        let newMmax = finalMmaxValue ? finalMmaxValue : 0;
+
+        let finalMmax = mMaxParentNode.length >= 2 ? newMmax : 0;
+
+        const editedMmaxData = {
+          mMax: finalMmax,
+        };
+        const editMmaxDetail = await mttrPrediction.findByIdAndUpdate(mttrIdData.id, editedMmaxData, {
+          new: true,
+          runValidators: true,
+        });
+      }
+      i++;
     }
- i++;
-  }
   } catch (error) {
     next(error);
   }
@@ -1025,6 +1026,7 @@ export async function getAllMttrPrediction(req, res, next) {
       message: "Get Mttr Prediction Details Sucessfully",
       data: mttrData,
     });
+
   } catch (error) {
     next(error);
   }
@@ -1034,6 +1036,11 @@ export async function createProcedure472(req, res, next) {
     const data = req.body;
     const procedureData = await mill472Procedure.create({
       taskType: data.taskType,
+      // repairable: data.repairable,
+      // levelOfReplace: data.levelOfReplace,
+      // levelOfRepair: data.levelOfRepair,
+      // spare: data.spare,
+      // remarks: data.remarks,
       time: data.time,
       totalLabour: data.totalLabour,
       skill: data.skill,
@@ -1100,6 +1107,8 @@ export async function getProcedure472(req, res, next) {
       new: true,
       runValidators: true,
     });
+
+
 
     res.status(200).json({
       message: "Get Mttr Procedure Details Successfully",
