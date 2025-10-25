@@ -14,15 +14,15 @@ export async function createFMECA(req, res, next) {
       });
       const sumofFailureModeRadio = finalValue.reduce((accumulator, currentvalue) => accumulator + currentvalue);
       const lastValue = Promise.resolve(sumofFailureModeRadio);
-      //if (sumofFailureModeRadio > 1) {
+      if (sumofFailureModeRadio >= 1) {
       res.status(400).json({
         message: "Failure Mode Radio Alpha Must be Equal to One",
       });
-      //} else if (sumofFailureModeRadio < 1 || sumofFailureModeRadio === 1) {
+      } else if (sumofFailureModeRadio < 1 || sumofFailureModeRadio === 1) {
       const existData = await FMECA.find({
         projectId: data.projectId, productId: data.productId
       });
-      console.log("existData ....", existData.length)
+      
       const createData = await FMECA.create({
         fmecaId: existData.length + 1,
         projectId: data.projectId,
@@ -70,7 +70,7 @@ export async function createFMECA(req, res, next) {
           createData,
         },
       });
-      //}
+      }
     }
   } catch (error) {
     next(error);
@@ -90,7 +90,7 @@ export async function updateFMECA(req, res, next) {
 
     if (FailureModeRadioTrue) {
       console.log("if condition")
-      if (data.failureModeRatioAlpha < 1000) {
+      if (data.failureModeRatioAlpha <= 1) {
         const finalValue = [];
         FailureModeRadio?.map((list) => {
           finalValue.push(parseFloat(list.failureModeRatioAlpha));
