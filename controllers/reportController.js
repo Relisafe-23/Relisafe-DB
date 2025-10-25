@@ -358,7 +358,7 @@ export async function getReliabilityReport(req, res, next) {
       const sampleDataPromises = allProductData.map(async (list) => {
         const result = await FailureRatePrediction.findOne({
           projectId: data.projectId,
-          productId: list.productId,
+          productId: list.id,
         }).populate("productId");
 
         // If no results found, return an object with productId and null values
