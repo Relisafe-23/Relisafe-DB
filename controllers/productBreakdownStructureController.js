@@ -9,7 +9,6 @@ import { IdentityPoolClient } from "google-auth-library";
 export async function createProductBreakdownStructure(req, res, next) {
   try {
     const data = req.body;
-
     const createProductBreakdownStructure =
       await productBreakdownStructure.create({
         productName: data.productName,
@@ -23,6 +22,7 @@ export async function createProductBreakdownStructure(req, res, next) {
         projectId: data.projectId,
         companyId: data.companyId,
       });
+      
 
     const treeIndexCount = await productTreeStructure.find({
       projectId: data.projectId,
@@ -183,7 +183,7 @@ export async function getProductBreakdownStructure(req, res, next) {
     next(error);
   }
 }
-export async function getAllproductBreakdownStructure(req, res, next) {
+export async function   getAllproductBreakdownStructure(req, res, next) {
   try {
     const getAllData = await productBreakdownStructure
       .find()
@@ -255,267 +255,151 @@ export async function deleteproductBreakdownStructure(req, res, next) {
 export async function createPbsRecordFromImportFile(req, res, next) {
   try {
     const { rowData, projectId, companyId } = req.body;
-    const data = req.body;
+    
+    if (!rowData || !Array.isArray(rowData)) {
+      return res.status(400).json({
+        error: "rowData is required and must be an array",
+      });
+    }
 
-    let parentStack = []; // Stack to keep track of parent nodes
+    // Sort data numerically (1, 1.1, 1.2, 2, etc.)
+    const sortedRowData = [...rowData].sort((a, b) => {
+      const aParts = a.indexCount.split('.').map(Number);
+      const bParts = b.indexCount.split('.').map(Number);
+      for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+        const aVal = aParts[i] || 0;
+        const bVal = bParts[i] || 0;
+        if (aVal !== bVal) return aVal - bVal;
+      }
+      return 0;
+    });
 
-    for (const productData of rowData) {
-      const {
-        indexCount,
-        productName,
-        category,
-        partType,
-        partNumber,
-        fr,
-        mttr,
-        mct,
-        mlh,
-        reference,
-        quantity,
-        environment,
-        temperature,
-      } = productData;
+    const nodesMap = new Map();
 
-      // Ensure indexCount is a string for comparison
-      const indexCountString = String(indexCount); // Convert to string
+    // Step 1: Create all products
+    for (const productData of sortedRowData) {
+      const createdProduct = await product.create({
+        projectId,
+        companyId,
+        productName: productData.productName,
+        category: productData.category,
+        reference: productData.reference,
+        partType: productData.partType,
+        partNumber: productData.partNumber,
+        quantity: productData.quantity,
+        environment: productData.environment,
+        temperature: productData.temperature,
+        status: ACTIVE_TREE,
+      });
 
-      // Check if the product is a parent (indexCount without a dot) or child
-      if (!indexCountString.includes(".")) {
-        // Create the parent product
-        const createdParentProduct = await product.create({
-          projectId,
-          companyId,
-          productName,
-          category,
-          reference,
-          partType,
-          partNumber,
-          quantity,
-          environment,
-          temperature,
-          status: ACTIVE_TREE, // Default status
-        });
+      const node = {
+        id: createdProduct._id,
+        indexCount: String(productData.indexCount),
+        type: "Product",
+        productName: productData.productName,
+        category: productData.category,
+        reference: productData.reference,
+        partType: productData.partType,
+        partNumber: productData.partNumber,
+        quantity: productData.quantity,
+        environment: productData.environment,
+        temperature: productData.temperature,
+        status: ACTIVE_TREE,
+        fr: productData.fr || 0,
+        mttr: productData.mttr || 0,
+        mct: productData.mct || 0,
+        mlh: productData.mlh || 0,
+        parentId: null,
+        productId: null,
+        children: [],
+      };
 
-        // Create the tree structure node for the parent product
-        const parentNode = {
-          id: createdParentProduct._id,
-          indexCount: indexCountString,
-          type: "Product",
-          productName,
-          category,
-          reference,
-          partType,
-          partNumber,
-          quantity,
-          environment,
-          temperature,
-          status: ACTIVE_TREE,
-          parentId: null, // No parent for top-level products
-          fr,
-          mttr,
-          mct,
-          mlh,
-          children: [],
-        };
-        console.log("parentNode....",parentNode)
-        // Create a new tree structure for the parent product
-        const parentTreeStructure = await productTreeStructure.create({
-          projectId,
-          companyId,
-          productId: createdParentProduct._id,
-          treeStructure: parentNode,
-        
-        });
-          console.log("parentTreeStructure....",parentTreeStructure)
+      nodesMap.set(node.indexCount, node);
+    }
 
-        // Push the newly created parent node onto the stack
-        parentStack.push({
-          id: parentTreeStructure._id,
-          indexCount: indexCountString,
-          treeStructureId: parentTreeStructure.treeStructure._id
-            ? parentTreeStructure.treeStructure._id
-            : parentTreeStructure.treeStructure.id,
-        });
-
-        await productTreeStructure.findByIdAndUpdate(
-          parentTreeStructure._id,
-          { "treeStructure.parentId": parentTreeStructure.id }, // Set parentId to its own ID
-          { new: true, runValidators: true }
-        );
-      } else {
-      
-        // This is a child product, determine the correct parent from the stack
-        const parentIndexCount = indexCountString.slice(
-          0,
-          indexCountString.indexOf(".")
-        );
-        console.log("esle....",parentIndexCount)
-
-        // Find the parent node using the parentIndexCount
-        const parentNode = parentStack.find(
-          (node) => node.indexCount == parentIndexCount
-        );
-        
-
+    // Step 2: Build hierarchy (only where there is a parent)
+    for (const [indexCount, node] of nodesMap) {
+      const level = indexCount.split('.').length;
+      if (level > 1) {
+        const parentIndexCount = indexCount.split('.').slice(0, -1).join('.');
+        const parentNode = nodesMap.get(parentIndexCount);
         if (parentNode) {
-          // Create the child product
-          const createdChildProduct = await product.create({
-            projectId,
-            companyId,
-            productName,
-            category,
-            reference,
-            partType,
-            partNumber,
-            quantity,
-            environment,
-            temperature,
-            status: ACTIVE_TREE, // Default status
-          });
-
-          // Create the tree structure node for the child product
-          const childNode = {
-            id: createdChildProduct._id,
-            // productId: parentNode.treeStructureId,
-            indexCount: indexCountString,
-            type: "Product",
-            productName,
-            category,
-            reference,
-            partType,
-            partNumber,
-            quantity,
-            environment,
-            temperature,
-            status: ACTIVE_TREE,
-            parentId: parentNode.id.toString(), // Link child to the correct parent
-            fr,
-            mttr,
-            mct,
-            mlh,
-            children: [],
-          };
-
-          // Add the child node to the parent's children array
-          await productTreeStructure.findByIdAndUpdate(parentNode.id, {
-            $push: { "treeStructure.children": childNode },
-          });
-
-          // Update the parent node's productId to include the child's ID
-          // await productTreeStructure.findByIdAndUpdate(parentNode.id, {
-          //   $set: { "treeStructure.productId": createdChildProduct._id },
-          // });
-        } else {
-          console.error(
-            `Parent not found for child indexCount: ${indexCountString}`
-          );
+          node.productId = parentNode.id;
+          parentNode.children.push(node);
         }
-
-        const getTreeData = await productTreeStructure.find({
-          projectId: data.projectId,
-          companyId: data.companyId,
-        }); 
-        if(getTreeData.length > 1){
-          getTreeData.map((treeData) => {
-            updateParentProductIdforEach(treeData);
-          });
-  
-          // Function to iterate over treeStructure and update child productIds
-          async function updateParentProductIdforEach(treeData) {
-            // Ensure treeStructure exists and has children
-            if (treeData.treeStructure && Array.isArray(treeData.treeStructure.children)) {
-              treeData.treeStructure.children.map((cList) => {
-                updateCalc(cList, treeData.treeStructure.id, treeData);
-              });
-            } else {
-              console.error("Invalid treeStructure or children not found for:", treeData._id);
-            }
-          }
-          async function updateCalc(node, parentId, treeData) {
-            if (node) {
-              // Update productId with parentId
-              node.productId = parentId;
-          
-              // Update the tree structure in MongoDB
-              await productTreeStructure.findByIdAndUpdate(
-                treeData._id,
-                {
-                  $set: {
-                    "treeStructure.children.$[elem].productId": parentId,
-                  },
-                },
-                {
-                  arrayFilters: [{ "elem.id": node.id }],
-                  new: true,
-                  runValidators: true,
-                }
-              );
-          
-              // Only recurse if there are further children
-              if (Array.isArray(node.children) && node.children.length > 0) {
-                for (let child of node.children) {
-                  // Use iteration instead of recursion for deeper levels to avoid stack overflow
-                  await updateCalc(child, node.id, treeData);
-                }
-              }
-            }
-          }
-        } 
-        else{
-            updateParentProductIdforEach(getTreeData[0]?.treeStructure);
-         
-  
-          // Function to iterate over treeStructure and update child productIds
-          async function updateParentProductIdforEach(treeData) { 
-           // console.log("treeData.......",treeData)           
-          
-            if(treeData.children.length > 0){
-              treeData.children.map((cList) => {
-               // console.log("cList......",cList)
-                updateCalc(cList, treeData.id);
-              });
-            }
-          }
-          async function updateCalc(node, parentId) {
-            // console.log("node......",node);
-            // console.log("parentId......",parentId);
-            if (node) {
-              // Update productId with parentId
-              node.productId = parentId;
-          
-              // Update the tree structure in MongoDB
-              await productTreeStructure.findByIdAndUpdate(
-                getTreeData[0]._id,
-                {
-                  $set: {
-                    "treeStructure.children.$[elem].productId": parentId,
-                  },
-                },
-                {
-                  arrayFilters: [{ "elem.id": node.id }],
-                  new: true,
-                  runValidators: true,
-                }
-              );                        
-            }
-            if (node.children.length > 0) {
-              for (let child of node.children) {
-                //console.log("child......",child)
-                // Use iteration instead of recursion for deeper levels to avoid stack overflow
-                await updateParentProductIdforEach(child);
-              }
-            }
-          }
-        }      
-       
       }
     }
 
+    // ✅ Step 3: Gather all root-level nodes (1, 2, 3, etc.)
+    const rootNodes = Array.from(nodesMap.values()).filter(
+      node => node.indexCount.split('.').length === 1
+    );
+
+    if (rootNodes.length === 0) {
+      return res.status(400).json({ error: "No top-level products found" });
+    }
+
+    // Step 4: Find or create tree structure
+    let treeStructure = await productTreeStructure.findOne({ projectId, companyId });
+    const treeStructureId = treeStructure ? treeStructure._id.toString() : null;
+
+    // Step 5: Build final structure recursively
+    function buildFinalStructure(node, parentTreeId) {
+      const finalNode = { ...node };
+      finalNode.parentId = parentTreeId;
+      if (finalNode.children && finalNode.children.length > 0) {
+        finalNode.children = finalNode.children.map(child =>
+          buildFinalStructure(child, parentTreeId)
+        );
+      }
+      return finalNode;
+    }
+
+    // ✅ Step 6: Create combined structure (keep same format as before)
+    const finalStructure = {
+      id: treeStructureId,
+      type: "RootGroup",
+      children: rootNodes.map(root => buildFinalStructure(root, treeStructureId)),
+    };
+
+    // Step 7: Save to DB
+    if (treeStructure) {
+      await productTreeStructure.findByIdAndUpdate(
+        treeStructure._id,
+        {
+          $set: {
+            treeStructure: finalStructure,
+            productId: null,
+          },
+        },
+        { new: true, runValidators: true }
+      );
+    } else {
+      const newStructure = await productTreeStructure.create({
+        projectId,
+        companyId,
+        productId: null,
+        treeStructure: finalStructure,
+      });
+      const newTreeId = newStructure._id.toString();
+      const rebuiltStructure = {
+        ...finalStructure,
+        id: newTreeId,
+      };
+      await productTreeStructure.findByIdAndUpdate(
+        newTreeId,
+        { $set: { treeStructure: rebuiltStructure } },
+        { new: true, runValidators: true }
+      );
+    }
+
     res.status(201).json({
-      message: "Products and child products created successfully",
+      message: "Products imported successfully with separate top-level roots",
     });
   } catch (error) {
-    console.error("Error creating products and tree structure: ", error);
+    console.error("Error in createPbsRecordFromImportFile:", error);
     next(error);
   }
 }
+
+
