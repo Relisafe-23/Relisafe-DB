@@ -237,6 +237,8 @@ export async function createProduct(req, res, next) {
 export async function updateProduct(req, res, next) {
   try {
     const data = req.body;
+   
+    
 
     let existTree = await productTreeStructure.findOne({
       _id: data.productTreeStructureId,
@@ -956,6 +958,7 @@ export async function updateProduct(req, res, next) {
       }
     }
   } catch (error) {
+    console.log("error", error);
     next(error);
   }
 }
@@ -1234,7 +1237,7 @@ export async function getAllProduct(req, res, next) {
       .find()
       .populate("companyId")
       .populate("projectId");
-console.log("getAllProductDetails....");
+
     res.status(201).json({
       message: "Get All Product Details Successfully ",
       data: {

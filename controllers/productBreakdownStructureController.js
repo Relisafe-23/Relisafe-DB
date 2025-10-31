@@ -267,8 +267,8 @@ export async function createPbsRecordFromImportFile(req, res, next) {
       const aParts = a.indexCount.split('.').map(Number);
       const bParts = b.indexCount.split('.').map(Number);
       for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
-        const aVal = aParts[i] || 0;
-        const bVal = bParts[i] || 0;
+        const aVal = aParts[i];
+        const bVal = bParts[i];
         if (aVal !== bVal) return aVal - bVal;
       }
       return 0;
@@ -305,25 +305,26 @@ export async function createPbsRecordFromImportFile(req, res, next) {
         environment: productData.environment,
         temperature: productData.temperature,
         status: ACTIVE_TREE,
-        fr: productData.fr || 0,
-        mttr: productData.mttr || 0,
-        mct: productData.mct || 0,
-        mlh: productData.mlh || 0,
-        parentId: null,
-        productId: null,
+        fr: productData.fr,
+        mttr: productData.mttr,
+        mct: productData.mct,
+        mlh: productData.mlh,
+        parentId: null, // This will be updated to the tree structure ID
+        productId: null, // This will be updated for child products
         children: [],
       };
 
       nodesMap.set(node.indexCount, node);
     }
 
-    // Step 2: Build hierarchy (only where there is a parent)
+    // Step 2: Build hierarchy and set proper productId (parent-child relationships)
     for (const [indexCount, node] of nodesMap) {
       const level = indexCount.split('.').length;
       if (level > 1) {
         const parentIndexCount = indexCount.split('.').slice(0, -1).join('.');
         const parentNode = nodesMap.get(parentIndexCount);
         if (parentNode) {
+          // Set productId to parent product's document ID for child products
           node.productId = parentNode.id;
           parentNode.children.push(node);
         }
@@ -341,60 +342,71 @@ export async function createPbsRecordFromImportFile(req, res, next) {
 
     // Step 4: Find or create tree structure
     let treeStructure = await productTreeStructure.findOne({ projectId, companyId });
-    const treeStructureId = treeStructure ? treeStructure._id.toString() : null;
+    let treeStructureId;
 
-    // Step 5: Build final structure recursively
-    function buildFinalStructure(node, parentTreeId) {
-      const finalNode = { ...node };
-      finalNode.parentId = parentTreeId;
+    if (treeStructure) {
+      treeStructureId = treeStructure._id.toString();
+    } else {
+      const newStructure = await productTreeStructure.create({
+        projectId,
+        companyId,
+        productId: null,
+        treeStructure: { id: null, type: "RootGroup", children: [] }, // Temporary structure
+      });
+      treeStructureId = newStructure._id.toString();
+      treeStructure = newStructure;
+    }
+
+    // Step 5: Build final structure with tree structure ID as parentId for all nodes
+    function buildFinalStructure(node, treeId) {
+      const finalNode = { 
+        ...node,
+        // Set parentId to the tree structure ID for ALL nodes
+        parentId: treeId
+      };
+      
       if (finalNode.children && finalNode.children.length > 0) {
         finalNode.children = finalNode.children.map(child =>
-          buildFinalStructure(child, parentTreeId)
+          buildFinalStructure(child, treeId)
         );
       }
       return finalNode;
     }
 
-    // ✅ Step 6: Create combined structure (keep same format as before)
+    // ✅ Step 6: Create combined structure with tree structure ID as parentId
     const finalStructure = {
       id: treeStructureId,
       type: "RootGroup",
       children: rootNodes.map(root => buildFinalStructure(root, treeStructureId)),
     };
 
-    // Step 7: Save to DB
-    if (treeStructure) {
-      await productTreeStructure.findByIdAndUpdate(
-        treeStructure._id,
-        {
-          $set: {
-            treeStructure: finalStructure,
-            productId: null,
-          },
+    // Step 7: Update the tree structure with final structure
+    await productTreeStructure.findByIdAndUpdate(
+      treeStructureId,
+      {
+        $set: {
+          treeStructure: finalStructure,
         },
-        { new: true, runValidators: true }
-      );
-    } else {
-      const newStructure = await productTreeStructure.create({
-        projectId,
-        companyId,
-        productId: null,
-        treeStructure: finalStructure,
-      });
-      const newTreeId = newStructure._id.toString();
-      const rebuiltStructure = {
-        ...finalStructure,
-        id: newTreeId,
-      };
-      await productTreeStructure.findByIdAndUpdate(
-        newTreeId,
-        { $set: { treeStructure: rebuiltStructure } },
-        { new: true, runValidators: true }
+      },
+      { new: true, runValidators: true }
+    );
+
+    // Step 8: Update individual product records with tree structure ID as parentId
+    for (const [indexCount, node] of nodesMap) {
+      await product.findByIdAndUpdate(
+        node.id,
+        { 
+          $set: { 
+            parentId: treeStructureId, // Set tree structure ID as parentId for all products
+            productTreeStructureId: treeStructureId
+          } 
+        }
       );
     }
 
     res.status(201).json({
-      message: "Products imported successfully with separate top-level roots",
+      message: "Products imported successfully with tree structure ID as parentId",
+      treeStructureId: treeStructureId
     });
   } catch (error) {
     console.error("Error in createPbsRecordFromImportFile:", error);
