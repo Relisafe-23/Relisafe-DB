@@ -785,24 +785,28 @@ export async function getAllLibraryDataValues(req, res, next) {
 export async function getAllConnectedLibraryData(req, res, next) {
   try {
     const data = req.query;
+    console.log("data....", data);
     const mName = new RegExp(["^", data.moduleName, "$"].join(""), "i");
     const existData = await libraries.findOne({
       moduleName: mName,
       projectId: data.projectId,
     });
+    console.log("existData....", existData);
     const libraryData = await connectLibrary
       .find({
         projectId: data.projectId,
-        libraryId: existData._id,
+        libraryId: existData?._id || existData?.id,
         sourceName: data.sourceName,
         sourceValue: data.sourceValue,
       })
       .populate("libraryId");
+      console.log("libraryData....", libraryData);
     res.status(200).json({
       message: "Get All Connected Library Values",
       libraryData,
     });
   } catch (err) {
+    console.log("Error....", err);
     next(err);
   }
 }

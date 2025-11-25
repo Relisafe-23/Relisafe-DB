@@ -257,7 +257,7 @@ export async function updateUser(req, res, next) {
       password: data.password,
       confirmPassword: data.confirmPassword,
       name: data.name,
-      phone: data.phone,
+      phoneNumber: data.phoneNumber,
     };
 
     const editData = await User.findByIdAndUpdate(userId, editDetail, {
