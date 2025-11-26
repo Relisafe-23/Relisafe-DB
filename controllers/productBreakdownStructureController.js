@@ -34,6 +34,7 @@ export async function createProductBreakdownStructure(req, res, next) {
         parentProduct.push(list);
       }
     });
+
     const treeIndex = parentProduct.length;
 
     const createData = await product.create({
@@ -98,7 +99,7 @@ export async function createProductBreakdownStructure(req, res, next) {
       mlh: "",
       children: [],
     };
-
+console.log("createNode....",createNode)
     const updatetreeStructure = {
       treeStructure: createNode,
     };
