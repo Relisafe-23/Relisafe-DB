@@ -5,7 +5,7 @@ import { createOne, getAll, getOne, updateOne, deleteOne } from "./baseControlle
 export async function createPmMra(req, res, next) {
   try {
     const data = req.body;
-    console.log("data.....", data);
+    console.log("data...create..", data);
     const existData = await pmMra.find({
       productId: data.productId,
       projectId: data.projectId,
@@ -35,7 +35,7 @@ export async function createPmMra(req, res, next) {
         failureFindTsk: data.failureFindTsk,
         combinationOfTsk: data.combinationOfTsk,
         reDesign: data.reDesign,
-        rcmNotes: data.rcmNotes,
+        rcmNotes: data.rcmnotes,
         pmTaskId: data.pmTaskId,
         pmTaskType: data.pmTaskType,
         taskIntrvlFreq: data.taskIntrvlFreq,
@@ -106,6 +106,7 @@ export async function createPmMra(req, res, next) {
 export async function updatePmMra(req, res, next) {
   try {
     const data = req.body;
+   
 
     const editData = {
       repairable: data.repairable,
@@ -127,7 +128,7 @@ export async function updatePmMra(req, res, next) {
       failureFindTsk: data.failureFindTsk,
       combinationOfTsk: data.combinationOfTsk,
       reDesign: data.reDesign,
-      rcmNotes: data.rcmNotes,
+      rcmNotes: data.rcmnotes,
       pmTaskId: data.pmTaskId,
       pmTaskType: data.pmTaskType,
       taskIntrvlFreq: data.taskIntrvlFreq,
