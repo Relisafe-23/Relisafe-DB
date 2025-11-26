@@ -538,6 +538,8 @@ export async function createConnectLibrary(req, res, next) {
 export async function updateConnectLibraryField(req, res, next) {
   try {
     const data = req.body;
+
+    console.log("data....", data.destinationData.end);
     
     const mappData = data.destinationData;
     const end = mappData.end;
@@ -563,6 +565,7 @@ export async function updateConnectLibraryField(req, res, next) {
             sourceValue: data.sourceValue,
             destinationModule: data.destinationModuleName,
           };
+          console.log("editData....", editData);
           const updateData = await connectLibrary.findByIdAndUpdate(gList._id, editData, {
             runValidators: true,
             new: true,
@@ -590,7 +593,16 @@ export async function updateConnectLibraryField(req, res, next) {
           destinationModule: data.destinationModuleName,
         });
       }
+      
     }
+    const updatedIds = combinedArray.map(item => item.id);
+
+    await connectLibrary.deleteMany({
+      projectId: data.projectId,
+      sourceId: data.sourceId,
+      destinationId: { $nin: updatedIds } // delete removed destination ids
+    });
+
 
     res.status(201).json({
       message: "Connected Library Data Updated Successfully",
@@ -604,19 +616,21 @@ export async function updateConnectLibraryField(req, res, next) {
 export async function getConnectLibraryAllField(req, res, next) {
   try {
     const data = req.query;
+     console.log("=== API CALLED WITH PARAMS ===", data);
     if (data.moduleName) {
       const mName = new RegExp(["^", data.moduleName, "$"].join(""), "i");
       const existData = await libraries.findOne({
         moduleName: mName,
         projectId: data.projectId,
       });
-
+ console.log("=== LIBRARY FOUND ===", existData);
       const libraryData = await connectLibrary
         .find({ projectId: data.projectId, libraryId: existData._id })
         .populate("libraryId");
 
       const groupedData = {};
-
+   console.log("=== RAW DATABASE RESULTS (with moduleName) ===");
+      console.log("Total records found:", libraryData.length);
       libraryData.forEach((item) => {
         const projectId = item.projectId;
         const sourceId = item.sourceId;
@@ -637,7 +651,7 @@ export async function getConnectLibraryAllField(req, res, next) {
             destinationData: [],
           };
         }
-
+       console.log("groupedData[key]....", groupedData[key]);
         groupedData[key].destinationData.push({
           destinationId: item.destinationId,
           destinationName: item.destinationName,
@@ -647,7 +661,7 @@ export async function getConnectLibraryAllField(req, res, next) {
       });
 
       const getData = Object.values(groupedData);
-
+      //  console.log("getData....", getData);
       res.status(200).json({
         message: "Get All Data Successfully",
         getData,
@@ -655,6 +669,8 @@ export async function getConnectLibraryAllField(req, res, next) {
     } else {
       const libraryData = await connectLibrary.find({ projectId: data.projectId }).populate("libraryId");
       const groupedData = {};
+           console.log("=== RAW DATABASE RESULTS (without moduleName) ===");
+      console.log("Total records found:", libraryData.length);
       libraryData.forEach((item) => {
         const projectId = item.projectId;
         const sourceId = item.sourceId;
@@ -675,6 +691,12 @@ export async function getConnectLibraryAllField(req, res, next) {
             destinationData: [],
           };
         }
+          console.log(`Adding destination for key ${key}:`, {
+    destinationId: item.destinationId,
+    destinationName: item.destinationName,
+    destinationValue: item.destinationValue, // Destination value here
+    destinationModuleName: item.destinationModule
+  });
         groupedData[key].destinationData.push({
           destinationId: item.destinationId,
           destinationName: item.destinationName,
@@ -684,6 +706,17 @@ export async function getConnectLibraryAllField(req, res, next) {
       });
 
       const getData = Object.values(groupedData);
+      getData.forEach((group, index) => {
+  console.log(`Group ${index + 1}:`, {
+    sourceId: group.sourceId,
+    sourceValue: group.sourceValue,
+    destinationDataCount: group.destinationData.length,
+    destinationValues: group.destinationData.map(dest => ({
+      destinationValue: dest.destinationValue,
+      destinationName: dest.destinationName
+    }))
+  });
+});
       res.status(200).json({
         message: "Get All Data Successfully",
         getData,

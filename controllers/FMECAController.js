@@ -4,21 +4,32 @@ import { deleteOne } from "./baseController.js";
 export async function createFMECA(req, res, next) {
   try {
     const data = req.body;
+   
     const FailureModeRadio = data?.Alldata;
+   
     const FailureModeRadioTrue = data?.Alldata ? true : false;
     if (FailureModeRadioTrue === true) {
       const finalValue = [];
+      const finalValueForEndEffectBeta = [];
       finalValue.push(parseFloat(data.failureModeRatioAlpha));
+      finalValueForEndEffectBeta.push(parseFloat(data.endEffectRatioBeta));
       FailureModeRadio.map((list) => {
         finalValue.push(parseFloat(list.failureModeRatioAlpha));
+        finalValueForEndEffectBeta.push(parseFloat(list.endEffectRatioBeta));
       });
       const sumofFailureModeRadio = finalValue.reduce((accumulator, currentvalue) => accumulator + currentvalue);
+      const sumofEndEffectRatioBeta = finalValueForEndEffectBeta.reduce((accumulator, currentvalue) => accumulator + currentvalue);
+  
       const lastValue = Promise.resolve(sumofFailureModeRadio);
-      if (sumofFailureModeRadio >= 1) {
+      if (sumofFailureModeRadio > 1) {
       res.status(400).json({
         message: "Failure Mode Radio Alpha Must be Equal to One",
       });
-      } else if (sumofFailureModeRadio < 1 || sumofFailureModeRadio === 1) {
+      }else if (sumofEndEffectRatioBeta > 1) {
+        res.status(400).json({
+          message: "End Effect Ratio Beta Must be Equal to One",
+        });
+      }else if (sumofFailureModeRadio < 1 || sumofFailureModeRadio === 1) {
       const existData = await FMECA.find({
         projectId: data.projectId, productId: data.productId
       });
