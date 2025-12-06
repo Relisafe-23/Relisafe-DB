@@ -18,6 +18,7 @@ import {
   getSeparateDestinationData,
   getAllLibraryDataValues,
   getAllConnectedLibraryData,
+  getConnectedLibraryAllField,
 } from "../controllers/libraryController.js";
 
 router.route("/").post(createLibrary);
@@ -39,6 +40,7 @@ router
 
 router.route("/create/connect/value").post(createConnectLibrary);
 router.route("/get/all/connect/value").get(getConnectLibraryAllField);
+router.route("/get/all/connect/library/value").get(getConnectedLibraryAllField);
 router.route("/update/connect/value").put(updateConnectLibraryField);
 router.route("/get/connect/value").get(getConnectLibraryField);
 router.route("/delete/connect/value").delete(deleteConnectLibraryField);
