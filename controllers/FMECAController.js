@@ -87,7 +87,6 @@ export async function createFMECA(req, res, next) {
     next(error);
   }
 }
-
 export async function updateFMECA(req, res, next) {
   try {
     const data = req.body;

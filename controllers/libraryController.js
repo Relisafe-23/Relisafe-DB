@@ -612,8 +612,307 @@ export async function updateConnectLibraryField(req, res, next) {
     next(err);
   }
 }
-
 export async function getConnectLibraryAllField(req, res, next) {
+  try {
+    const data = req.query;
+    console.log("=== API DEBUG MODE ===");
+    console.log("Query params:", JSON.stringify(data, null, 2));
+
+    // Debug: Check if sourceValue is coming correctly
+    console.log("sourceValue type:", typeof data.sourceValue);
+    console.log("sourceValue value:", `"${data.sourceValue}"`);
+    console.log("sourceValue trimmed:", `"${(data.sourceValue || '').trim()}"`);
+
+    let libraryData = [];
+
+    // ---------------------------------------------------
+    // CASE 1: moduleName filter
+    // ---------------------------------------------------
+    if (data.moduleName) {
+      console.log(`Looking for module: "${data.moduleName}"`);
+      const mName = new RegExp(`^${data.moduleName}$`, "i");
+
+      const existData = await libraries.findOne({
+        moduleName: mName,
+        projectId: data.projectId,
+      });
+
+      console.log("Library found:", existData ? "Yes" : "No");
+      if (!existData) {
+        return res.status(404).json({
+          message: "Module not found in library",
+          getData: [],
+        });
+      }
+
+      // Build query
+      const query = {
+        projectId: data.projectId,
+        libraryId: existData._id,
+      };
+      
+      // Check if we should filter by sourceValue
+      if (data.sourceValue && data.sourceValue.trim() !== '') {
+        query.sourceValue = data.sourceValue;
+        console.log(`Adding sourceValue filter: "${data.sourceValue}"`);
+      }
+
+      console.log("Database query:", JSON.stringify(query, null, 2));
+      
+      libraryData = await connectLibrary
+        .find(query)
+        .populate({
+          path: 'libraryId',
+          select: 'moduleName'
+        });
+
+    } else {
+      // CASE 2: No moduleName → get all
+      const query = { projectId: data.projectId };
+      
+      if (data.sourceValue && data.sourceValue.trim() !== '') {
+        query.sourceValue = data.sourceValue;
+        console.log(`Adding sourceValue filter: "${data.sourceValue}"`);
+      }
+      
+      console.log("Database query:", JSON.stringify(query, null, 2));
+      
+      libraryData = await connectLibrary
+        .find(query)
+        .populate({
+          path: 'libraryId',
+          select: 'moduleName'
+        });
+    }
+
+    console.log(`\n=== DATABASE RESULTS ===`);
+    console.log(`Total records found: ${libraryData.length}`);
+    
+    // Display each record found
+    libraryData.forEach((item, index) => {
+      console.log(`\nRecord ${index + 1}:`);
+      console.log(`  sourceId: ${item.sourceId}`);
+      console.log(`  sourceValue: "${item.sourceValue}"`);
+      console.log(`  sourceName: ${item.sourceName}`);
+      console.log(`  destinationId: ${item.destinationId}`);
+      console.log(`  destinationValue: "${item.destinationValue}"`);
+      console.log(`  destinationName: ${item.destinationName}`);
+      console.log(`  destinationModule: ${item.destinationModule}`);
+      console.log(`  libraryId.moduleName: ${item.libraryId?.moduleName}`);
+    });
+
+    // ---------------------------------------------------
+    // Check if we need to filter more
+    // ---------------------------------------------------
+    const hasValidSourceValue = data.sourceValue && data.sourceValue.trim() !== '';
+    
+    if (hasValidSourceValue) {
+      // Additional filtering for exact match
+      const beforeFilter = libraryData.length;
+      libraryData = libraryData.filter(item => {
+        const matches = item.sourceValue && 
+                       item.sourceValue.toString().trim() === data.sourceValue.trim();
+        if (!matches) {
+          console.log(`Filtering out: sourceValue "${item.sourceValue}" != "${data.sourceValue}"`);
+        }
+        return matches;
+      });
+      console.log(`After sourceValue exact match: ${beforeFilter} → ${libraryData.length}`);
+    }
+
+    // ---------------------------------------------------
+    // Grouping Logic
+    // ---------------------------------------------------
+    const groupedData = {};
+    let totalDestinations = 0;
+
+    libraryData.forEach((item, index) => {
+      const key = `${item.sourceId}-${item.sourceValue}-${item.destinationModule}`;
+
+      if (!groupedData[key]) {
+        groupedData[key] = {
+          _id: item._id,
+          projectId: item.projectId,
+          companyId: item.companyId,
+          libraryId: item.libraryId,
+          sourceId: item.sourceId,
+          sourceName: item.sourceName,
+          sourceValue: item.sourceValue,
+          destinationModuleName: item.destinationModule,
+          destinationData: [],
+        };
+        console.log(`Created new group: ${key}`);
+      }
+
+      // Add destination if it has a value
+      if (item.destinationValue) {
+        groupedData[key].destinationData.push({
+          destinationId: item.destinationId,
+          destinationName: item.destinationName,
+          destinationValue: item.destinationValue,
+          destinationModuleName: item.destinationModule,
+        });
+        totalDestinations++;
+        console.log(`  Added destination: ${item.destinationName} = "${item.destinationValue}"`);
+      } else {
+        console.log(`  Skipping destination (no value): ${item.destinationName}`);
+      }
+    });
+
+    const getData = Object.values(groupedData);
+
+    console.log(`\n=== FINAL RESULT ===`);
+    console.log(`Groups created: ${getData.length}`);
+    console.log(`Total destinations added: ${totalDestinations}`);
+    
+    // Show what we're returning
+    getData.forEach((group, index) => {
+      console.log(`\nGroup ${index + 1}:`);
+      console.log(`  sourceValue: "${group.sourceValue}"`);
+      console.log(`  destinationModuleName: ${group.destinationModuleName}`);
+      console.log(`  destinations count: ${group.destinationData.length}`);
+      if (group.destinationData.length > 0) {
+        group.destinationData.forEach((dest, idx) => {
+          console.log(`    Dest ${idx + 1}: ${dest.destinationName} = "${dest.destinationValue}"`);
+        });
+      }
+    });
+
+    res.status(200).json({
+      message: getData.length > 0 
+        ? "Get All Data Successfully" 
+        : "No data found",
+      getData,
+      _debug: {
+        queryParams: data,
+        totalRecords: libraryData.length,
+        groupsCreated: getData.length,
+        totalDestinations: totalDestinations,
+        timestamp: new Date().toISOString()
+      }
+    });
+
+  } catch (err) {
+    console.error("API Error:", err);
+    next(err);
+  }
+}
+
+
+// export async function getConnectLibraryAllField(req, res, next) {
+//   try {
+//     const data = req.query;
+//      console.log("=== API CALLED WITH PARAMS ===", data);
+//     if (data.moduleName) {
+//       const mName = new RegExp(["^", data.moduleName, "$"].join(""), "i");
+//       const existData = await libraries.findOne({
+//         moduleName: mName,
+//         projectId: data.projectId,
+//       });
+//  console.log("=== LIBRARY FOUND ===", existData);
+//       const libraryData = await connectLibrary
+//         .find({ projectId: data.projectId, libraryId: existData._id })
+//         .populate("libraryId");
+
+//       const groupedData = {};
+//    console.log("=== RAW DATABASE RESULTS (with moduleName) ===");
+//       console.log("Total records found:", libraryData.length);
+//       libraryData.forEach((item) => {
+//         const projectId = item.projectId;
+//         const sourceId = item.sourceId;
+//         const sourceValue = item.sourceValue;
+
+//         const key = `${sourceId}-${sourceValue}`;
+
+//         if (!groupedData[key]) {
+//           groupedData[key] = {
+//             _id: item._id,
+//             projectId: projectId,
+//             companyId: item.companyId,
+//             libraryId: item.libraryId,
+//             sourceId: sourceId,
+//             sourceName: item.sourceName,
+//             sourceValue: sourceValue,
+//             destinationModuleName: item.destinationModule,
+//             destinationData: [],
+//           };
+//         }
+//        console.log("groupedData[key]....", groupedData[key]);
+//         groupedData[key].destinationData.push({
+//           destinationId: item.destinationId,
+//           destinationName: item.destinationName,
+//           destinationValue: item.destinationValue,
+//           destinationModuleName: item.destinationModule,
+//         });
+//       });
+
+//       const getData = Object.values(groupedData);
+//       //  console.log("getData....", getData);
+//       res.status(200).json({
+//         message: "Get All Data Successfully",
+//         getData,
+//       });
+//     } else {
+//       const libraryData = await connectLibrary.find({ projectId: data.projectId }).populate("libraryId");
+//       const groupedData = {};
+//            console.log("=== RAW DATABASE RESULTS (without moduleName) ===");
+//       console.log("Total records found:", libraryData.length);
+//       libraryData.forEach((item) => {
+//         const projectId = item.projectId;
+//         const sourceId = item.sourceId;
+//         const sourceValue = item.sourceValue;
+
+//         const key = `${sourceId}-${sourceValue}`;
+
+//         if (!groupedData[key]) {
+//           groupedData[key] = {
+//             _id: item._id,
+//             projectId: projectId,
+//             companyId: item.companyId,
+//             libraryId: item.libraryId,
+//             sourceId: sourceId,
+//             sourceName: item.sourceName,
+//             sourceValue: sourceValue,
+//             destinationModuleName: item.destinationModule,
+//             destinationData: [],
+//           };
+//         }
+//           console.log(`Adding destination for key ${key}:`, {
+//     destinationId: item.destinationId,
+//     destinationName: item.destinationName,
+//     destinationValue: item.destinationValue, // Destination value here
+//     destinationModuleName: item.destinationModule
+//   });
+//         groupedData[key].destinationData.push({
+//           destinationId: item.destinationId,
+//           destinationName: item.destinationName,
+//           destinationValue: item.destinationValue,
+//           destinationModuleName: item.destinationModule,
+//         });
+//       });
+
+//       const getData = Object.values(groupedData);
+//       getData.forEach((group, index) => {
+//   console.log(`Group ${index + 1}:`, {
+//     sourceId: group.sourceId,
+//     sourceValue: group.sourceValue,
+//     destinationDataCount: group.destinationData.length,
+//     destinationValues: group.destinationData.map(dest => ({
+//       destinationValue: dest.destinationValue,
+//       destinationName: dest.destinationName
+//     }))
+//   });
+// });
+//       res.status(200).json({
+//         message: "Get All Data Successfully",
+//         getData,
+//       });
+//     }
+//   } catch (err) {
+//     next(err);
+//   }
+// }
+export async function getConnectedLibraryAllField(req, res, next) {
   try {
     const data = req.query;
      console.log("=== API CALLED WITH PARAMS ===", data);
@@ -726,7 +1025,6 @@ export async function getConnectLibraryAllField(req, res, next) {
     next(err);
   }
 }
-
 export async function getConnectLibraryField(req, res, next) {
   try {
     const data = req.query;
