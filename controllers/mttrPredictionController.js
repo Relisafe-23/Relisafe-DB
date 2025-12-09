@@ -505,6 +505,7 @@ export async function createMttrPrediction(req, res, next) {
       projectId: data.projectId,
       productId: data.productId,
     });
+    
 
     // --- Helper functions (kept inside handler to access data easily) ---
 
@@ -744,7 +745,6 @@ export async function createMttrPrediction(req, res, next) {
 export async function updateMttrPrediction(req, res, next) {
   try {
     const data = req.body;
-
     const editedData = {
       repairable: data.repairable,
       levelOfReplace: data.levelOfReplace,
@@ -851,7 +851,6 @@ export async function updateMttrPrediction(req, res, next) {
       });
 
       const treeStructure = existTree?.treeStructure;
-
       updateNodeIntoTree(treeStructure, data.productId, existTree.id);
 
       async function updateNodeIntoTree(node, nodeId, id) {
@@ -1283,7 +1282,6 @@ export async function getAllMttrPrediction(req, res, next) {
       productId: data.productId,
       companyId: data.companyId,
     });
-
     res.status(200).json({
       message: "Get Mttr Prediction Details Sucessfully",
       data: mttrData,
@@ -1386,7 +1384,6 @@ export async function getProcedure472(req, res, next) {
     next(error);
   }
 }
-
 export async function updateProcedure472(req, res, next) {
   try {
     const producedureId = req.params.id;
