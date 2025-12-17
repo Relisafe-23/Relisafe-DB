@@ -1888,7 +1888,9 @@ export async function getFmecaReport(req, res, next) {
   try {
     const data = req.query;
     const reportType = data.reportType;
+   
     if (reportType == 0) {
+
       const treeStructure = await productTreeStructure
         .find({ projectId: data.projectId })
         .populate("projectId")
@@ -1917,12 +1919,12 @@ export async function getFmecaReport(req, res, next) {
         getNodeTreeProduct(childNode);
       });
 
+      
       const sampleDataPromises = allProductData.map(async (list) => {
-        const fmecaData = await FMECA.findOne({
+        const fmecaData = await FMECA.find({
           projectId: data.projectId,
           productId: list.id,
         }).populate("productId");
-
         const pmmraData = await PMMRA.findOne({
           projectId: data.projectId,
           productId: list.id,
@@ -1937,9 +1939,11 @@ export async function getFmecaReport(req, res, next) {
       });
 
       const sampleData = await Promise.all(sampleDataPromises);
+      
 
       // Flatten the sampleData array if it contains nested arrays
       const flattenedSampleData = sampleData.flat();
+      console.log("flattenedSampleData", flattenedSampleData);
       res.status(201).json({
         message: "Get Product List Tree Structure",
         data: flattenedSampleData,
@@ -1968,6 +1972,7 @@ export async function getFmecaReport(req, res, next) {
           }
         }
       });
+    
 
       const sampleDataPromises = allProductData.map(async (list) => {
         const fmecaData = await FMECA.findOne({
@@ -1988,7 +1993,9 @@ export async function getFmecaReport(req, res, next) {
         };
       });
 
+
       const sampleData = await Promise.all(sampleDataPromises);
+   
 
       // Flatten the sampleData array if it contains nested arrays
       const flattenedSampleData = sampleData.flat();
@@ -2022,6 +2029,7 @@ export async function getFmecaReport(req, res, next) {
           flattenedSampleData,
           hierarchyType
         );
+
 
         res.status(201).json({
           message: "Get Product List Tree Structure",
@@ -2326,7 +2334,7 @@ export async function getSafetyReport(req, res, next) {
       });
 
       const sampleDataPromises = allProductData.map(async (list) => {
-        const safetyDatas = await SAFETY.findOne({
+        const safetyDatas = await SAFETY.find({
           projectId: data.projectId,
           productId: list.id,
         }).populate("productId");
