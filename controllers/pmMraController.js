@@ -10,14 +10,14 @@ export async function createPmMra(req, res, next) {
       productId: data.productId,
       projectId: data.projectId,
       companyId: data.companyId,
-      fmecaId: data.fmecaId
+      failureMode: data.failureMode
     });
 
     if (existData.length === 0) {
       const createData = await pmMra.create({
         repairable: data.repairable,
         levelOfRepair: data.levelOfRepair,
-        fmecaId: data.fmecaId,
+        failureMode: data.failureMode,
         levelOfReplace: data.levelOfReplace,
         spare: data.spare,
         endEffect: data.endEffect,
@@ -106,13 +106,14 @@ export async function createPmMra(req, res, next) {
 export async function updatePmMra(req, res, next) {
   try {
     const data = req.body;
-   
+  
 
     const editData = {
       repairable: data.repairable,
       levelOfRepair: data.levelOfRepair,
       levelOfReplace: data.levelOfReplace,
       spare: data.spare,
+       failureMode: data.failureMode,
       endEffect: data.endEffect,
       safetyImpact: data.safetyImpact,
       reliabilityImpact: data.reliabilityImpact,
@@ -177,6 +178,7 @@ export async function updatePmMra(req, res, next) {
       projectId: data.projectId,
       companyId: data.companyId,
       productId: data.productId,
+      
     };
 
     const editDetail = await pmMra.findByIdAndUpdate(data.pmMraId, editData, {

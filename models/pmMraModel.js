@@ -5,8 +5,8 @@ const pmMraSchema = new Schema({
   name: {
     type: String,
   },
-  fmecaId:{
-    type: Number,
+  failureMode: {
+    type: String,
   },
   partNumber: {
     type: String,
