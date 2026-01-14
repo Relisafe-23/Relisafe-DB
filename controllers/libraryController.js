@@ -153,7 +153,7 @@ export async function createLibrary(req, res, next) {
       );
     } else if (mName.test("MTTR")) {
       moduleFieldData.push(
-        { key: "Task Type", name: "TaskType" },
+        { key: "Task Type", name: "taskType" },
         { key: "Average Task Time(Hours)", name: "time" },
         { key: "No of Labours", name: "totalLabour" },
         { key: "Skills", name: "skill" },
