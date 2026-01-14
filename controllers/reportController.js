@@ -1102,6 +1102,7 @@ export async function getMaintainabilityReport(req, res, next) {
 export async function getPreventiveReport(req, res, next) {
   try {
     const data = req.query;
+
     const reportType = data.reportType;
 
     if (reportType == 0) {
@@ -1140,6 +1141,10 @@ export async function getPreventiveReport(req, res, next) {
         }).populate("productId");
 
         // If no results found, return an object with productId and null values
+
+        console.log(pmmraResult, "pmmra list")
+        console.log(list, "product list")
+
         return {
           productId: list,
           pmmraData: pmmraResult || null,
@@ -1475,7 +1480,7 @@ export async function getPreventiveReport(req, res, next) {
 }
 
 export async function getSparePartsAnanysisReport(req, res, next) {
-  try {
+  try { 
     const data = req.query;
     const reportType = data.reportType;
     if (reportType == 0) {
@@ -1498,6 +1503,8 @@ export async function getSparePartsAnanysisReport(req, res, next) {
         }
       };
 
+
+
       treeStructure.forEach((list) => {
         const addParentProduct = list.treeStructure;
         if (addParentProduct.status == "active") {
@@ -1507,7 +1514,16 @@ export async function getSparePartsAnanysisReport(req, res, next) {
         getNodeTreeProduct(childNode);
       });
 
+
+
+      console.log(allProductData,'allProductData .... ')
+
+
+
       const sampleDataPromises = allProductData.map(async (list) => {
+
+        console.log(list,"list value...")
+
         const mttrResult = await MTTRPrediction.findOne({
           projectId: data.projectId,
           productId: list.id,
@@ -1518,6 +1534,8 @@ export async function getSparePartsAnanysisReport(req, res, next) {
           productId: list.id,
         }).populate("productId");
 
+        console.log(sparePartsResult,"sparePartsResult")
+
         // If no results found, return an object with productId and null values
         return {
           productId: list,
@@ -1526,13 +1544,15 @@ export async function getSparePartsAnanysisReport(req, res, next) {
         };
       });
 
+
+
       const sampleData = await Promise.all(sampleDataPromises);
 
       // Flatten the sampleData array if it contains nested arrays
       const flattenedSampleData = sampleData.flat();
 
       res.status(201).json({
-        message: "Get Product List Tree Structure",
+        message: "Get Product List Tree Structure sss",
         data: flattenedSampleData,
       });
     } else if (reportType == 1) {

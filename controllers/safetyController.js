@@ -4,7 +4,7 @@ import { deleteOne } from "./baseController.js";
 export async function createSafety(req, res, next) {
   try {
     const data = req.body;
-
+    console.log(data, "data safety")
     const createData = await safety.create({
       projectId: data.projectId,
       companyId: data.companyId,

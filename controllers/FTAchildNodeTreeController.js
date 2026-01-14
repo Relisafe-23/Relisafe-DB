@@ -376,6 +376,11 @@ export async function getChildNode(req, res, next) {
     const parentId = req.params.parentId;
     const targetIndexCount = req.query.targetIndexCount;
 
+    console.log(projectId,"projectId")
+    console.log(parentId,"parentId")
+    console.log(targetIndexCount,"targetIndexCount")
+
+
     const treeStructureData = await FTAtreeData.findOne({
       _id: parentId,
       projectId: projectId,
