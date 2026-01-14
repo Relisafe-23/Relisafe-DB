@@ -4,6 +4,7 @@ import { deleteOne } from "./baseController.js";
 export async function createFMECA(req, res, next) {
   try {
     const data = req.body;
+
    
     const FailureModeRadio = data?.Alldata;
    
@@ -33,6 +34,7 @@ export async function createFMECA(req, res, next) {
       const existData = await FMECA.find({
         projectId: data.projectId, productId: data.productId
       });
+    
       
       const createData = await FMECA.create({
         fmecaId: existData.length + 1,
@@ -231,5 +233,127 @@ export async function getFMECA(req, res, next) {
     next(error);
   }
 }
+
+export async function createBulkUploadData(req, res, next) {
+  try {
+    const data = req.body;
+    const bulkData = data.postData;
+
+    
+
+    // 1️⃣ Existing DB sums
+    const existingData = await FMECA.find(
+      { projectId: data.projectId, productId: data.productId },
+      { failureModeRatioAlpha: 1, endEffectRatioBeta: 1 }
+    );
+
+    const existingFailureModeSum = existingData.reduce(
+      (sum, item) => sum + (Number(item.failureModeRatioAlpha) || 0),
+      0
+    );
+
+    const existingEndEffectSum = existingData.reduce(
+      (sum, item) => sum + (Number(item.endEffectRatioBeta) || 0),
+      0
+    );
+
+    // 2️⃣ Bulk sums
+    const bulkFailureModeSum = bulkData.reduce(
+      (sum, item) => sum + (Number(item.failureModeRatioAlpha) || 0),
+      0
+    );
+
+    const bulkEndEffectSum = bulkData.reduce(
+      (sum, item) => sum + (Number(item.endEffectRatioBeta) || 0),
+      0
+    );
+    console.log("existingFailureModeSum......",existingFailureModeSum);
+    console.log("bulkFailureModeSum.......",bulkFailureModeSum)
+
+    // 3️⃣ Validate totals
+    if (existingFailureModeSum + bulkFailureModeSum > 1) {
+      return res.status(400).json({
+        message: "Failure Mode Ratio Alpha sum must not exceed 1",
+      });
+    }
+    console.log("existingEndEffectSum......",existingEndEffectSum);
+    console.log("bulkEndEffectSum.....",bulkEndEffectSum)
+
+    if (existingEndEffectSum + bulkEndEffectSum > 1) {
+      return res.status(400).json({
+        message: "End Effect Ratio Beta sum must not exceed 1",
+      });
+    }
+
+    // 4️⃣ Generate FMECA IDs
+    const existingCount = await FMECA.countDocuments({
+      projectId: data.projectId,
+      productId: data.productId,
+    });
+
+    let nextFmecaId = existingCount + 1;
+    console.log("nextFmecaId.....",nextFmecaId)
+
+    // 5️⃣ Prepare docs
+   const createData = bulkData.map((item) => ({
+      fmecaId: nextFmecaId++,
+      projectId: data.projectId,
+      companyId: data.companyId,
+      productId: data.productId,
+       operatingPhase: item.operatingPhase,
+        function: item.function,
+        failureMode: item.failureMode,
+        // searchFM: item.searchFM,
+        cause: item.cause,
+        failureModeRatioAlpha: item.failureModeRatioAlpha,
+        detectableMeansDuringOperation: item.detectableMeansDuringOperation,
+        detectableMeansToMaintainer: item.detectableMeansToMaintainer,
+        BuiltInTest: item.BuiltInTest,
+        subSystemEffect: item.subSystemEffect,
+        systemEffect: item.systemEffect,
+        endEffect: item.endEffect,
+        endEffectRatioBeta: item.endEffectRatioBeta,
+        safetyImpact: item.safetyImpact,
+        referenceHazardId: item.referenceHazardId,
+        realibilityImpact: item.realibilityImpact,
+        serviceDisruptionTime: item.serviceDisruptionTime,
+        frequency: item.frequency,
+        severity: item.severity,
+        riskIndex: item.riskIndex,
+        designControl: item.designControl,
+        maintenanceControl: item.maintenanceControl,
+        exportConstraints: item.exportConstraints,
+        immediteActionDuringOperationalPhase: item.immediteActionDuringOperationalPhase,
+        immediteActionDuringNonOperationalPhase: item.immediteActionDuringNonOperationalPhase,
+        userField1: item.userField1,
+        userField2: item.userField2,
+        userField3: item.userField3,
+        userField4: item.userField4,
+        userField5: item.userField5,
+        userField6: item.userField6,
+        userField7: item.userField7,
+        userField8: item.userField8,
+        userField9: item.userField9,
+        userField10: item.userField10,
+    }));
+    console.log("docs...2....",createData)
+
+    // 6️⃣ Insert
+    await FMECA.insertMany(createData);
+
+      res.status(201).json({
+        message: "Bulk FMECA uploaded successfully",
+        data: {
+          createData,
+        },
+      });
+
+  
+  } catch (error) {
+    console.log("error.....",error)
+    next(error);
+  }
+}
+
 
 export const deleteFMECA = deleteOne(FMECA);
