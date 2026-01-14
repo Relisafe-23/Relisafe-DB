@@ -67,6 +67,8 @@ export async function updateSparePartsAnalysis(req, res, next) {
       productId: data.productId,
     };
 
+    console.log(editData, "editData")
+
     const editDetail = await sparePartsAnalysisList.findByIdAndUpdate(
       data.spareId,
       editData,
@@ -75,6 +77,8 @@ export async function updateSparePartsAnalysis(req, res, next) {
         runValidators: true,
       }
     );
+
+    // console.log(editDetail,"editDetail")
 
     res.status(201).json({
       message: "Spare Parts Analysis Updated Successfully",
@@ -111,23 +115,23 @@ export async function getAllSparePartsAnalysis(req, res, next) {
     findSingleProduct(spareTreeStructure);
 
     async function findSingleProduct(node) {
-      if (node.status === "active") {
+      if (node?.status === "active") {
         spareTreeData.push(node);
       }
 
-      if (node.children && node.children.length > 0) {
-        for (let i = 0; i < node.children.length; i++) {
-          findSparePartsSingleProduct(node.children[i]);
+      if (node?.children && node?.children?.length > 0) {
+        for (let i = 0; i < node?.children?.length; i++) {
+          findSparePartsSingleProduct(node?.children[i]);
         }
       }
 
       async function findSparePartsSingleProduct(node) {
-        if (node.status === "active") {
+        if (node?.status === "active") {
           spareTreeData.push(node);
         }
-        if (node.children && node.children.length > 0) {
-          for (let i = 0; i < node.children.length; i++) {
-            findSparePartsSingleProduct(node.children[i]);
+        if (node?.children && node?.children?.length > 0) {
+          for (let i = 0; i < node?.children?.length; i++) {
+            findSparePartsSingleProduct(node?.children[i]);
           }
         }
       }
@@ -189,6 +193,19 @@ export async function getAllSparePartsAnalysis(req, res, next) {
     const CalculatedSpareQuantity =
       valuesofFinal.length > 0 ? valuesofFinal[0] : 0;
 
+
+    if (sparePartsData?._id) {
+      await sparePartsAnalysisList.findByIdAndUpdate(
+        sparePartsData._id,
+        {
+          calculatedSpareQuantity: CalculatedSpareQuantity.toString(),
+        },
+        { new: true }
+      );
+    }
+
+    // console.log(CalculatedSpareQuantity," --- CalculatedSpareQuantity")
+
     res.status(201).json({
       message: "Get All Spare Parts Analysis Details",
       data: sparePartsData,
@@ -209,6 +226,9 @@ export async function getSparePartsAnalysis(req, res, next) {
       .populate("projectId")
       .populate("companyId")
       .populate("productId");
+
+
+    console.log(sparePartsData, "....sparePartsData.....")
 
     res.status(200).json({
       message: "Gel Spare Parts Analysis Details",

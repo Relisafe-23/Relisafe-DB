@@ -7,6 +7,8 @@ export async function createFTAtreeStructure(req, res, next) {
   try {
     const data = req.body;
 
+    console.log(data,"data...of tree node")
+
     const treeIndexCount = await FTAtreeData.find({
       projectId: data.projectId,
     });

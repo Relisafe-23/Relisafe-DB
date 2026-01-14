@@ -106,6 +106,8 @@ export async function createPmMra(req, res, next) {
 export async function updatePmMra(req, res, next) {
   try {
     const data = req.body;
+    console.log("data...update..", data);
+
   
 
     const editData = {
