@@ -10,7 +10,7 @@ import {
 import { TOKEN_KEY } from "../config.js";
 import jwt from "jsonwebtoken";
 import user from "../models/userModel.js";
-
+import bcrypt from 'bcrypt';
 export const deleteUser = deleteOne(User);
 
 export async function getAllCompanyUsers(req, res, next) {
@@ -27,61 +27,113 @@ export async function getAllCompanyUsers(req, res, next) {
     console.log("err", err);
   }
 }
+
+
+
+
 export async function createUser(req, res, next) {
   try {
     const data = req.body;
-    const exist = await User.find({ email: data.email });
-    if (exist.length === 0) {
-      const user = await User.create(data);
-      const userCount = await User.find({ companyId: data.companyId });
+    const exist = await User.findOne({ email: data.email });
+    
+    if (!exist) {
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(data.password, saltRounds);
+      
+      const userData = {
+        ...data,
+        password: hashedPassword
+      };
+
+      const user = await User.create(userData);
+      
+      // Exclude password from response
+      const userResponse = {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        companyId: user.companyId,
+        createdAt: user.createdAt
+        // Include other fields but NOT password
+      };
+
+      const userCount = await User.countDocuments({ companyId: data.companyId });
       await Company.findByIdAndUpdate(
         { _id: data.companyId },
-        { userCount: userCount.length }
+        { userCount: userCount }
       );
+      
       res.status(201).json({
         message: "User Created Successfully",
-        user,
+        user: userResponse, // Send filtered response
       });
     } else {
       res.status(208).json({
         message: "User Already Exist",
-        exist,
       });
     }
   } catch (err) {
     console.log("err", err);
+    res.status(500).json({
+      message: "Internal Server Error",
+      error: err.message
+    });
   }
 }
 
 export async function login(req, res, next) {
   try {
-    const data = req.body;
-    const userData = await User.findOne({
-      email: data.email,
-      password: data.password,
-    });
+    const { email, password } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({
+        status: "Bad Request",
+        message: "Email and password are required"
+      });
+    }
 
-    const date = Date.now();
+    const userData = await User.findOne({ email: email });
+    
     if (userData) {
-      const tokenId = jwt.sign(
-        { email: data.email, password: data.password },
-        TOKEN_KEY,
-        {
-          expiresIn: "20m",
-        }
-      );
-      const editDetail = {
-        sessionId: tokenId,
-        lastLogin: date,
-      };
-      const user = await User.findByIdAndUpdate(userData._id, editDetail, {
-        new: true,
-        runValidators: true,
-      });
-      res.status(200).json({
-        message: "Login Successfully",
-        user,
-      });
+      const isPasswordValid = await bcrypt.compare(password, userData.password);
+      
+      if (isPasswordValid) {
+        const date = Date.now();
+        const tokenId = jwt.sign(
+          { 
+            userId: userData._id, 
+            email: userData.email 
+          },
+          TOKEN_KEY,
+          { expiresIn: "20m" }
+        );
+        
+        const editDetail = {
+          sessionId: tokenId,
+          lastLogin: date,
+        };
+        
+        const user = await User.findByIdAndUpdate(
+          userData._id, 
+          editDetail, 
+          {
+            new: true,
+            runValidators: true,
+            select: '-password' // This excludes password from the result
+          }
+        );
+        
+        res.status(200).json({
+          message: "Login Successfully",
+          user, // Password is excluded due to select: '-password'
+          token: tokenId
+        });
+      } else {
+        res.status(400).json({
+          status: "Bad Request",
+          message: "Invalid Credential",
+        });
+      }
     } else {
       res.status(400).json({
         status: "Bad Request",
@@ -90,6 +142,10 @@ export async function login(req, res, next) {
     }
   } catch (err) {
     console.log("err", err);
+    res.status(500).json({
+      message: "Internal Server Error",
+      error: err.message
+    });
   }
 }
 export async function getCompanyUsers(req, res, next) {
@@ -211,10 +267,14 @@ export async function updateUser(req, res, next) {
     if (exist.length > 0) {
       const existEmail = exist[0].email;
       const newEmail = await User.find({ _id: userId });
+       const saltRounds = 10;
+         const hashedPassword = await bcrypt.hash(data.password, saltRounds);
       if (existEmail == newEmail[0].email) {
+       
+         console.log("hashedPassword....",hashedPassword)
         const editDetail = {
           email: data.email,
-          password: data.password,
+          password: hashedPassword,
           name: data.name,
           phoneNumber: data.phoneNumber,
           role: data.role,
@@ -237,7 +297,7 @@ export async function updateUser(req, res, next) {
     } else {
       const editDetail = {
         email: data.email,
-        password: data.password,
+        password: hashedPassword,
         name: data.name,
         phone: data.phone,
         role: data.role,
@@ -254,7 +314,7 @@ export async function updateUser(req, res, next) {
 
     const editDetail = {
       email: data.email,
-      password: data.password,
+      password: hashedPassword,
       confirmPassword: data.confirmPassword,
       name: data.name,
       phoneNumber: data.phoneNumber,
