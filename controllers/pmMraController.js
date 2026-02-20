@@ -5,20 +5,23 @@ import { createOne, getAll, getOne, updateOne, deleteOne } from "./baseControlle
 export async function createPmMra(req, res, next) {
   try {
     const data = req.body;
- 
+    console.log("Create PM MRA data:", data);
+
+    // Check if record already exists using failureMode string, not fmecaModeId
     const existData = await pmMra.find({
       productId: data.productId,
       projectId: data.projectId,
       companyId: data.companyId,
-      fmecaId: data.fmecaModeId
+      failureMode: data.failureMode, // Use failureMode string, not fmecaModeId
     });
-    console.log("...existData.....",existData.length)
+
+    console.log("Existing records count:", existData.length);
 
     if (existData.length === 0) {
       const createData = await pmMra.create({
         repairable: data.repairable,
         levelOfRepair: data.levelOfRepair,
-        failureMode: data.failureMode,
+        failureMode: data.failureMode, // Store the failure mode string
         levelOfReplace: data.levelOfReplace,
         spare: data.spare,
         endEffect: data.endEffect,
@@ -36,7 +39,7 @@ export async function createPmMra(req, res, next) {
         failureFindTsk: data.failureFindTsk,
         combinationOfTsk: data.combinationOfTsk,
         reDesign: data.reDesign,
-        rcmNotes: data.rcmnotes,
+        rcmNotes: data.rcmNotes, // Fixed: use rcmNotes (PascalCase)
         pmTaskId: data.pmTaskId,
         pmTaskType: data.pmTaskType,
         taskIntrvlFreq: data.taskIntrvlFreq,
@@ -85,10 +88,10 @@ export async function createPmMra(req, res, next) {
         projectId: data.projectId,
         companyId: data.companyId,
         productId: data.productId,
-        fmecaId: data.fmecaModeId,
+        fmecaId: data.fmecaModeId, // Store the FMECA ID separately
       });
 
-      console.log("createData.......", createData);
+      console.log("Created data:", createData);
       res.status(201).json({
         message: "PM MRA Created Successfully",
         data: {
@@ -97,10 +100,11 @@ export async function createPmMra(req, res, next) {
       });
     } else {
       res.status(208).json({
-        message: "PM MRA Already Exist",
+        message: "PM MRA Already Exists for this Failure Mode",
       });
     }
   } catch (error) {
+    console.error("Create error:", error);
     next(error);
   }
 }
@@ -108,16 +112,14 @@ export async function createPmMra(req, res, next) {
 export async function updatePmMra(req, res, next) {
   try {
     const data = req.body;
-    console.log("data...update..", data);
-
-  
+    console.log("Update data:", data);
 
     const editData = {
       repairable: data.repairable,
       levelOfRepair: data.levelOfRepair,
       levelOfReplace: data.levelOfReplace,
       spare: data.spare,
-       failureMode: data.failureMode,
+      failureMode: data.failureMode,
       endEffect: data.endEffect,
       safetyImpact: data.safetyImpact,
       reliabilityImpact: data.reliabilityImpact,
@@ -133,7 +135,7 @@ export async function updatePmMra(req, res, next) {
       failureFindTsk: data.failureFindTsk,
       combinationOfTsk: data.combinationOfTsk,
       reDesign: data.reDesign,
-      rcmNotes: data.rcmnotes,
+      rcmNotes: data.rcmnotes, 
       pmTaskId: data.pmTaskId,
       pmTaskType: data.pmTaskType,
       taskIntrvlFreq: data.taskIntrvlFreq,
@@ -182,19 +184,33 @@ export async function updatePmMra(req, res, next) {
       projectId: data.projectId,
       companyId: data.companyId,
       productId: data.productId,
-      
+      fmecaId: data.fmecaModeId, // Add this if you want to update FMECA ID
     };
+
+    console.log(data.pmMraId)
+
+    // First check if the record exists
+    const existingRecord = await pmMra.findById(data.pmMraId);
+    
+    if (!existingRecord) {
+      return res.status(404).json({
+        message: "PM MRA record not found",
+      });
+    }
 
     const editDetail = await pmMra.findByIdAndUpdate(data.pmMraId, editData, {
       new: true,
       runValidators: true,
     });
 
+    console.log("Updated record:", editDetail);
+
     res.status(201).json({
       message: "PM MRA Updated Successfully",
       editDetail,
     });
   } catch (error) {
+    console.error("Update error:", error);
     next(error);
   }
 }
@@ -202,14 +218,14 @@ export async function updatePmMra(req, res, next) {
 export async function getPmMraDetails(req, res, next) {
   try {
     const data = req.query;
-    console.log("data....",data)
+    // console.log("data....", data)
     const pmMraData = await pmMra.findOne({
       projectId: data.projectId,
       productId: data.productId,
       companyId: data.companyId,
       failureMode: data.failureMode,
     });
-    console.log("pmMraData......",pmMraData)
+    // console.log("pmMraData......", pmMraData)
     res.status(201).json({
       message: "Get All Pm_MRA Details Successfully ",
       data: pmMraData,

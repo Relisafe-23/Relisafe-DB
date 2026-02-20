@@ -230,7 +230,8 @@ const pmMraSchema = new Schema({
   productId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Product",
-  },
+  }
+
 });
 
 pmMraSchema.method("toJSON", function () {
