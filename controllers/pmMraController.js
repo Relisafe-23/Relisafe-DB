@@ -5,13 +5,14 @@ import { createOne, getAll, getOne, updateOne, deleteOne } from "./baseControlle
 export async function createPmMra(req, res, next) {
   try {
     const data = req.body;
-    console.log("data...create..", data);
+ 
     const existData = await pmMra.find({
       productId: data.productId,
       projectId: data.projectId,
       companyId: data.companyId,
-      failureMode: data.failureMode
+      fmecaId: data.fmecaModeId
     });
+    console.log("...existData.....",existData.length)
 
     if (existData.length === 0) {
       const createData = await pmMra.create({
@@ -84,6 +85,7 @@ export async function createPmMra(req, res, next) {
         projectId: data.projectId,
         companyId: data.companyId,
         productId: data.productId,
+        fmecaId: data.fmecaModeId,
       });
 
       console.log("createData.......", createData);
@@ -200,11 +202,14 @@ export async function updatePmMra(req, res, next) {
 export async function getPmMraDetails(req, res, next) {
   try {
     const data = req.query;
+    console.log("data....",data)
     const pmMraData = await pmMra.findOne({
       projectId: data.projectId,
       productId: data.productId,
       companyId: data.companyId,
+      failureMode: data.failureMode,
     });
+    console.log("pmMraData......",pmMraData)
     res.status(201).json({
       message: "Get All Pm_MRA Details Successfully ",
       data: pmMraData,
