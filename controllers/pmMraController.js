@@ -12,7 +12,7 @@ export async function createPmMra(req, res, next) {
       productId: data.productId,
       projectId: data.projectId,
       companyId: data.companyId,
-      failureMode: data.failureMode, // Use failureMode string, not fmecaModeId
+      fmecaId: data.fmecaModeId, // Use failureMode string, not fmecaModeId
     });
 
     console.log("Existing records count:", existData.length);
@@ -112,7 +112,6 @@ export async function createPmMra(req, res, next) {
 export async function updatePmMra(req, res, next) {
   try {
     const data = req.body;
-    console.log("Update data:", data);
 
     const editData = {
       repairable: data.repairable,
@@ -135,7 +134,7 @@ export async function updatePmMra(req, res, next) {
       failureFindTsk: data.failureFindTsk,
       combinationOfTsk: data.combinationOfTsk,
       reDesign: data.reDesign,
-      rcmNotes: data.rcmnotes, 
+      rcmNotes: data.rcmNotes,
       pmTaskId: data.pmTaskId,
       pmTaskType: data.pmTaskType,
       taskIntrvlFreq: data.taskIntrvlFreq,
@@ -184,31 +183,27 @@ export async function updatePmMra(req, res, next) {
       projectId: data.projectId,
       companyId: data.companyId,
       productId: data.productId,
-      fmecaId: data.fmecaModeId, // Add this if you want to update FMECA ID
     };
 
-    console.log(data.pmMraId)
+    console.log(data.pmMraId, "data.pmMra")
 
-    // First check if the record exists
-    const existingRecord = await pmMra.findById(data.pmMraId);
-    
-    if (!existingRecord) {
+    const editDetail = await pmMra.findOneAndUpdate(
+      { fmecaId: data.pmMraId },   // ✅ filter object
+      editData,
+      { new: true, runValidators: true }
+    );
+
+    if (!editDetail) {
       return res.status(404).json({
         message: "PM MRA record not found",
       });
     }
 
-    const editDetail = await pmMra.findByIdAndUpdate(data.pmMraId, editData, {
-      new: true,
-      runValidators: true,
-    });
-
-    console.log("Updated record:", editDetail);
-
-    res.status(201).json({
+    res.status(200).json({
       message: "PM MRA Updated Successfully",
       editDetail,
     });
+
   } catch (error) {
     console.error("Update error:", error);
     next(error);
@@ -218,14 +213,14 @@ export async function updatePmMra(req, res, next) {
 export async function getPmMraDetails(req, res, next) {
   try {
     const data = req.query;
-    // console.log("data....", data)
+    console.log("data....", data)
     const pmMraData = await pmMra.findOne({
       projectId: data.projectId,
       productId: data.productId,
       companyId: data.companyId,
-      failureMode: data.failureMode,
+      fmecaId: data.fmecaModeId,
     });
-    // console.log("pmMraData......", pmMraData)
+    console.log("pmMraData......", pmMraData)
     res.status(201).json({
       message: "Get All Pm_MRA Details Successfully ",
       data: pmMraData,
