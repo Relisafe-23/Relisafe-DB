@@ -16,6 +16,9 @@ export async function createFailureRatePrediction(req, res, next) {
   try {
     const data = req.body;
 
+
+    // console.log(data, 'create Failure Rate Prediction')
+
     const existData = {
       productId: data.productId,
       projectId: data.projectId,
@@ -294,6 +297,8 @@ export async function updateFailureRatePrediction(req, res, next) {
           new: true,
           runValidators: true,
         });
+
+      // console.log(createFailureRatePrediction,"createFailureRatePrediction")
       res.status(201).json({
         message: "FRP Updated Successfuly",
         data: {

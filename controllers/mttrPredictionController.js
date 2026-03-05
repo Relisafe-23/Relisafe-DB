@@ -1258,11 +1258,16 @@ export async function getMttrPrediction(req, res, next) {
   try {
     const id = req.params.id;
 
+    // console.log(id,'id mttr')
+
     const mttrData = await mttrPrediction
-      .findOne({ _id: id })
+      .findOne({ productId: id })
       .populate("companyId")
       .populate("projectId")
       .populate("productId");
+   
+      // console.log(typeof id);
+      // console.log('mttrData',mttrData)
 
     res.status(200).json({
       message: "Get All Mttr Prediction Details Successfully",

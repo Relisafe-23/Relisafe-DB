@@ -60,45 +60,50 @@ import EditConfigRBD from '../models/EditConfigRBD.js';
 //   }
 // };
 
-export const createRBDConfig = async (req,res) =>{
+export const createRBDConfig = async (req, res) => {
   const data = req.body;
-  console.log(data,"data...")
+  // console.log(data,"data...")
   const editRBD = await EditConfigRBD.create({
     projectId: data.projectId,
-       rbdTitle:data.rbdTitle,
-       missionTime:data.missionTime,
-        description:data.description,
-      
-        //  printRemarks:data.printRemarks
-  })
-  console.log("editRBD",editRBD)
-    res.status(201).json({
-      success: true,
-      data: data
-    });
+    rbdTitle: data.rbdTitle,
+    missionTime: data.missionTime,
+    description: data.description,
 
-  } 
-export const updatedConfig = async (req,res)=>{
-    const data = req.body;
-  console.log(data,"data...")
-  const editRBD = await EditConfigRBD.findByIdAndUpdat({
-    projectId: data.projectId,
-       rbdTitle:data.rbdTitle,
-       missionTime:data.missionTime,
-        description:data.description,
-      
-        //  printRemarks:data.printRemarks
+    //  printRemarks:data.printRemarks
   })
-  console.log("editRBD",editRBD)
-    res.status(201).json({
-      success: true,
-      data: data
-    });
+  // console.log("editRBD",editRBD)
+  res.status(201).json({
+    success: true,
+    data: data
+  });
+
 }
+export const updatedConfig = async (req, res) => {
+  const data = req.body;
+
+  console.log(data, "data...");
+
+  const editRBD = await EditConfigRBD.findOneAndUpdate(
+    { _id: data.id },   
+    {
+      rbdTitle: data.rbdTitle,
+      missionTime: data.missionTime,
+      description: data.description,
+    },
+    { new: true }
+  );
+
+  console.log("editRBD", editRBD);
+
+  res.status(200).json({
+    success: true,
+    data: editRBD,
+  });
+};
 
 export const getRBDConfig = async (req, res) => {
   try {
-    console.log("get...");
+    // console.log("get...");
 
     const { projectId } = req.query;
 
@@ -123,7 +128,7 @@ export const getRBDConfig = async (req, res) => {
       message: error.message,
     });
   }
-}; 
+};
 
 // export const createRBDConfig = async (req, res) => {
 //   try {
@@ -138,12 +143,12 @@ export const getRBDConfig = async (req, res) => {
 //       upperFont,
 //       lowerFont 
 //     } = req.body;
-    
+
 //     const userId = req.user?.id; // Assuming you have user authentication
 
 //     // Check if configuration already exists
 //     const existingConfig = await RBDConfig.findOne({ projectId, rbdId });
-    
+
 //     if (existingConfig) {
 //       return res.status(409).json({
 //         success: false,
@@ -184,7 +189,7 @@ export const getRBDConfig = async (req, res) => {
 //     });
 //   } catch (error) {
 //     console.error('Error in createRBDConfig:', error);
-    
+
 //     // Handle duplicate key error
 //     if (error.code === 11000) {
 //       return res.status(409).json({
@@ -202,70 +207,23 @@ export const getRBDConfig = async (req, res) => {
 // };
 
 
-export const updateRBDConfig = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const updateData = req.body;
-    const userId = req.user?.id;
 
-    // Remove fields that shouldn't be updated directly
-    delete updateData._id;
-    delete updateData.createdAt;
-    delete updateData.createdBy;
-    delete updateData.projectId; // Don't allow projectId to be updated
-    delete updateData.rbdId; // Don't allow rbdId to be updated
-
-    const updatedConfig = await RBDConfig.findByIdAndUpdate(
-      id,
-      {
-        ...updateData,
-        updatedBy: userId,
-        updatedAt: Date.now()
-      },
-      { 
-        new: true, 
-        runValidators: true 
-      }
-    ).populate('createdBy', 'name email')
-     .populate('updatedBy', 'name email');
-
-    if (!updatedConfig) {
-      return res.status(404).json({
-        success: false,
-        message: 'RBD configuration not found'
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: 'RBD configuration updated successfully',
-      data: updatedConfig
-    });
-  } catch (error) {
-    console.error('Error in updateRBDConfig:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to update RBD configuration',
-      error: error.message
-    });
-  }
-};
 
 
 export const saveRBDConfig = async (req, res) => {
   try {
-    const { 
-      projectId, 
-      rbdId, 
-      rbdTitle, 
-      missionTime, 
-      displayUpper, 
-      displayLower, 
+    const {
+      projectId,
+      rbdId,
+      rbdTitle,
+      missionTime,
+      displayUpper,
+      displayLower,
       printRemarks,
       upperFont,
-      lowerFont 
+      lowerFont
     } = req.body;
-    
+
     const userId = req.user?.id;
 
     if (!projectId || !rbdId) {
@@ -307,7 +265,7 @@ export const saveRBDConfig = async (req, res) => {
         runValidators: true
       }
     ).populate('createdBy', 'name email')
-     .populate('updatedBy', 'name email');
+      .populate('updatedBy', 'name email');
 
     res.status(200).json({
       success: true,
@@ -328,8 +286,8 @@ export const saveRBDConfig = async (req, res) => {
 export const deleteRBDConfig = async (req, res) => {
   try {
     const { id } = req.params;
-
-    const deletedConfig = await RBDConfig.findByIdAndDelete(id);
+    console.log(id)
+    const deletedConfig = await EditConfigRBD.findByIdAndDelete(id);
 
     if (!deletedConfig) {
       return res.status(404).json({
@@ -365,7 +323,7 @@ export const getAllRBDConfigs = async (req, res) => {
     }
 
     const query = { projectId };
-    
+
     // Add search functionality
     if (search) {
       query.$or = [
@@ -424,7 +382,7 @@ export const updateFontSettings = async (req, res) => {
 
     const updateField = type === 'upper' ? 'upperFont' : 'lowerFont';
 
-    const updatedConfig = await  EditConfigRBD.findByIdAndUpdate(
+    const updatedConfig = await EditConfigRBD.findByIdAndUpdate(
       id,
       {
         [updateField]: fontSettings,
