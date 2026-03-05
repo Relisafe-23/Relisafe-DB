@@ -5,9 +5,9 @@ export async function createFMECA(req, res, next) {
   try {
     const data = req.body;
 
-   
+
     const FailureModeRadio = data?.Alldata;
-   
+
     const FailureModeRadioTrue = data?.Alldata ? true : false;
     if (FailureModeRadioTrue === true) {
       const finalValue = [];
@@ -20,69 +20,69 @@ export async function createFMECA(req, res, next) {
       });
       const sumofFailureModeRadio = finalValue.reduce((accumulator, currentvalue) => accumulator + currentvalue);
       const sumofEndEffectRatioBeta = finalValueForEndEffectBeta.reduce((accumulator, currentvalue) => accumulator + currentvalue);
-  
+
       const lastValue = Promise.resolve(sumofFailureModeRadio);
       if (sumofFailureModeRadio > 1) {
-      res.status(400).json({
-        message: "Failure Mode Radio Alpha Must be Equal to One",
-      });
-      }else if (sumofEndEffectRatioBeta > 1) {
+        res.status(400).json({
+          message: "Failure Mode Radio Alpha Must be Equal to One",
+        });
+      } else if (sumofEndEffectRatioBeta > 1) {
         res.status(400).json({
           message: "End Effect Ratio Beta Must be Equal to One",
         });
-      }else if (sumofFailureModeRadio < 1 || sumofFailureModeRadio === 1) {
-      const existData = await FMECA.find({
-        projectId: data.projectId, productId: data.productId
-      });
-    
-      
-      const createData = await FMECA.create({
-        fmecaId: existData.length + 1,
-        projectId: data.projectId,
-        companyId: data.companyId,
-        productId: data.productId,
-        operatingPhase: data.operatingPhase,
-        function: data.function,
-        failureMode: data.failureMode,
-        // searchFM: data.searchFM,
-        cause: data.cause,
-        failureModeRatioAlpha: data.failureModeRatioAlpha,
-        detectableMeansDuringOperation: data.detectableMeansDuringOperation,
-        detectableMeansToMaintainer: data.detectableMeansToMaintainer,
-        BuiltInTest: data.BuiltInTest,
-        subSystemEffect: data.subSystemEffect,
-        systemEffect: data.systemEffect,
-        endEffect: data.endEffect,
-        endEffectRatioBeta: data.endEffectRatioBeta,
-        safetyImpact: data.safetyImpact,
-        referenceHazardId: data.referenceHazardId,
-        realibilityImpact: data.realibilityImpact,
-        serviceDisruptionTime: data.serviceDisruptionTime,
-        frequency: data.frequency,
-        severity: data.severity,
-        riskIndex: data.riskIndex,
-        designControl: data.designControl,
-        maintenanceControl: data.maintenanceControl,
-        exportConstraints: data.exportConstraints,
-        immediteActionDuringOperationalPhase: data.immediteActionDuringOperationalPhase,
-        immediteActionDuringNonOperationalPhase: data.immediteActionDuringNonOperationalPhase,
-        userField1: data.userField1,
-        userField2: data.userField2,
-        userField3: data.userField3,
-        userField4: data.userField4,
-        userField5: data.userField5,
-        userField6: data.userField6,
-        userField7: data.userField7,
-        userField8: data.userField8,
-        userField9: data.userField9,
-        userField10: data.userField10,
-      });
-      res.status(201).json({
-        message: "FMECA Created Successfully",
-        data: {
-          createData,
-        },
-      });
+      } else if (sumofFailureModeRadio < 1 || sumofFailureModeRadio === 1) {
+        const existData = await FMECA.find({
+          projectId: data.projectId, productId: data.productId
+        });
+
+
+        const createData = await FMECA.create({
+          fmecaId: existData.length + 1,
+          projectId: data.projectId,
+          companyId: data.companyId,
+          productId: data.productId,
+          operatingPhase: data.operatingPhase,
+          function: data.function,
+          failureMode: data.failureMode,
+          // searchFM: data.searchFM,
+          cause: data.cause,
+          failureModeRatioAlpha: data.failureModeRatioAlpha,
+          detectableMeansDuringOperation: data.detectableMeansDuringOperation,
+          detectableMeansToMaintainer: data.detectableMeansToMaintainer,
+          BuiltInTest: data.BuiltInTest,
+          subSystemEffect: data.subSystemEffect,
+          systemEffect: data.systemEffect,
+          endEffect: data.endEffect,
+          endEffectRatioBeta: data.endEffectRatioBeta,
+          safetyImpact: data.safetyImpact,
+          referenceHazardId: data.referenceHazardId,
+          realibilityImpact: data.realibilityImpact,
+          serviceDisruptionTime: data.serviceDisruptionTime,
+          frequency: data.frequency,
+          severity: data.severity,
+          riskIndex: data.riskIndex,
+          designControl: data.designControl,
+          maintenanceControl: data.maintenanceControl,
+          exportConstraints: data.exportConstraints,
+          immediteActionDuringOperationalPhase: data.immediteActionDuringOperationalPhase,
+          immediteActionDuringNonOperationalPhase: data.immediteActionDuringNonOperationalPhase,
+          userField1: data.userField1,
+          userField2: data.userField2,
+          userField3: data.userField3,
+          userField4: data.userField4,
+          userField5: data.userField5,
+          userField6: data.userField6,
+          userField7: data.userField7,
+          userField8: data.userField8,
+          userField9: data.userField9,
+          userField10: data.userField10,
+        });
+        res.status(201).json({
+          message: "FMECA Created Successfully",
+          data: {
+            createData,
+          },
+        });
       }
     }
   } catch (error) {
@@ -92,12 +92,12 @@ export async function createFMECA(req, res, next) {
 export async function updateFMECA(req, res, next) {
   try {
     const data = req.body;
-    
- 
+
+
     const FailureModeRadio = data?.Alldata;
-    
+
     const FailureModeRadioTrue = data.Alldata ? true : false;
- 
+
     const currentFailureModeRadioAlphaValue = data.failureModeRatioAlpha;
 
     if (FailureModeRadioTrue) {
@@ -188,7 +188,7 @@ export async function updateFMECA(req, res, next) {
           message: "Failure Mode Radio Alpha Must be Equal to One",
         });
       }
-    }else{
+    } else {
       console.log("elseeeeeee")
     }
   } catch (error) {
@@ -217,13 +217,16 @@ export async function getAllFMECA(req, res, next) {
 export async function getFMECA(req, res, next) {
   try {
     const data = req.query;
-    
 
+    console.log(data, 'data of fmeca')
     const fmecaData = await FMECA.find({ projectId: data.projectId, productId: data.productId })
       .populate("companyId")
       .populate("productId")
       .populate("projectId");
-    
+
+
+    // console.log(fmecaData, 'fmecaData');
+
 
     res.status(200).json({
       message: "Get FMECA Details Successfully",
@@ -239,7 +242,7 @@ export async function createBulkUploadData(req, res, next) {
     const data = req.body;
     const bulkData = data.postData;
 
-    
+
 
     // 1️⃣ Existing DB sums
     const existingData = await FMECA.find(
@@ -267,8 +270,8 @@ export async function createBulkUploadData(req, res, next) {
       (sum, item) => sum + (Number(item.endEffectRatioBeta) || 0),
       0
     );
-    console.log("existingFailureModeSum......",existingFailureModeSum);
-    console.log("bulkFailureModeSum.......",bulkFailureModeSum)
+    console.log("existingFailureModeSum......", existingFailureModeSum);
+    console.log("bulkFailureModeSum.......", bulkFailureModeSum)
 
     // 3️⃣ Validate totals
     if (existingFailureModeSum + bulkFailureModeSum > 1) {
@@ -276,8 +279,8 @@ export async function createBulkUploadData(req, res, next) {
         message: "Failure Mode Ratio Alpha sum must not exceed 1",
       });
     }
-    console.log("existingEndEffectSum......",existingEndEffectSum);
-    console.log("bulkEndEffectSum.....",bulkEndEffectSum)
+    console.log("existingEndEffectSum......", existingEndEffectSum);
+    console.log("bulkEndEffectSum.....", bulkEndEffectSum)
 
     if (existingEndEffectSum + bulkEndEffectSum > 1) {
       return res.status(400).json({
@@ -292,65 +295,65 @@ export async function createBulkUploadData(req, res, next) {
     });
 
     let nextFmecaId = existingCount + 1;
-    console.log("nextFmecaId.....",nextFmecaId)
+    console.log("nextFmecaId.....", nextFmecaId)
 
     // 5️⃣ Prepare docs
-   const createData = bulkData.map((item) => ({
+    const createData = bulkData.map((item) => ({
       fmecaId: nextFmecaId++,
       projectId: data.projectId,
       companyId: data.companyId,
       productId: data.productId,
-       operatingPhase: item.operatingPhase,
-        function: item.function,
-        failureMode: item.failureMode,
-        // searchFM: item.searchFM,
-        cause: item.cause,
-        failureModeRatioAlpha: item.failureModeRatioAlpha,
-        detectableMeansDuringOperation: item.detectableMeansDuringOperation,
-        detectableMeansToMaintainer: item.detectableMeansToMaintainer,
-        BuiltInTest: item.BuiltInTest,
-        subSystemEffect: item.subSystemEffect,
-        systemEffect: item.systemEffect,
-        endEffect: item.endEffect,
-        endEffectRatioBeta: item.endEffectRatioBeta,
-        safetyImpact: item.safetyImpact,
-        referenceHazardId: item.referenceHazardId,
-        realibilityImpact: item.realibilityImpact,
-        serviceDisruptionTime: item.serviceDisruptionTime,
-        frequency: item.frequency,
-        severity: item.severity,
-        riskIndex: item.riskIndex,
-        designControl: item.designControl,
-        maintenanceControl: item.maintenanceControl,
-        exportConstraints: item.exportConstraints,
-        immediteActionDuringOperationalPhase: item.immediteActionDuringOperationalPhase,
-        immediteActionDuringNonOperationalPhase: item.immediteActionDuringNonOperationalPhase,
-        userField1: item.userField1,
-        userField2: item.userField2,
-        userField3: item.userField3,
-        userField4: item.userField4,
-        userField5: item.userField5,
-        userField6: item.userField6,
-        userField7: item.userField7,
-        userField8: item.userField8,
-        userField9: item.userField9,
-        userField10: item.userField10,
+      operatingPhase: item.operatingPhase,
+      function: item.function,
+      failureMode: item.failureMode,
+      // searchFM: item.searchFM,
+      cause: item.cause,
+      failureModeRatioAlpha: item.failureModeRatioAlpha,
+      detectableMeansDuringOperation: item.detectableMeansDuringOperation,
+      detectableMeansToMaintainer: item.detectableMeansToMaintainer,
+      BuiltInTest: item.BuiltInTest,
+      subSystemEffect: item.subSystemEffect,
+      systemEffect: item.systemEffect,
+      endEffect: item.endEffect,
+      endEffectRatioBeta: item.endEffectRatioBeta,
+      safetyImpact: item.safetyImpact,
+      referenceHazardId: item.referenceHazardId,
+      realibilityImpact: item.realibilityImpact,
+      serviceDisruptionTime: item.serviceDisruptionTime,
+      frequency: item.frequency,
+      severity: item.severity,
+      riskIndex: item.riskIndex,
+      designControl: item.designControl,
+      maintenanceControl: item.maintenanceControl,
+      exportConstraints: item.exportConstraints,
+      immediteActionDuringOperationalPhase: item.immediteActionDuringOperationalPhase,
+      immediteActionDuringNonOperationalPhase: item.immediteActionDuringNonOperationalPhase,
+      userField1: item.userField1,
+      userField2: item.userField2,
+      userField3: item.userField3,
+      userField4: item.userField4,
+      userField5: item.userField5,
+      userField6: item.userField6,
+      userField7: item.userField7,
+      userField8: item.userField8,
+      userField9: item.userField9,
+      userField10: item.userField10,
     }));
-    console.log("docs...2....",createData)
+    console.log("docs...2....", createData)
 
     // 6️⃣ Insert
     await FMECA.insertMany(createData);
 
-      res.status(201).json({
-        message: "Bulk FMECA uploaded successfully",
-        data: {
-          createData,
-        },
-      });
+    res.status(201).json({
+      message: "Bulk FMECA uploaded successfully",
+      data: {
+        createData,
+      },
+    });
 
-  
+
   } catch (error) {
-    console.log("error.....",error)
+    console.log("error.....", error)
     next(error);
   }
 }

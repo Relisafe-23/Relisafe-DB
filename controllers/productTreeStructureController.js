@@ -82,6 +82,8 @@ export async function getProductList(req, res, next) {
         }
       }
     });
+
+    // console.log(allProductData,'allProductData')
     
     res.status(201).json({
       message: "Get Product List Tree Structure",
