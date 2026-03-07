@@ -215,6 +215,10 @@ const pmMraSchema = new Schema({
   userField5: {
     type: String,
   },
+  fmecaId:{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "FMECA"
+  },
   projectId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Project",
@@ -226,7 +230,8 @@ const pmMraSchema = new Schema({
   productId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Product",
-  },
+  }
+
 });
 
 pmMraSchema.method("toJSON", function () {
