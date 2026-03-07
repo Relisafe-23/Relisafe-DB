@@ -217,7 +217,7 @@ export async function getPmMraDetails(req, res, next) {
       projectId: data.projectId,
       productId: data.productId,
       companyId: data.companyId,
-      // fmecaId: data.fmecaModeId,
+      fmecaId: data.fmecaModeId,
     });
     res.status(201).json({
       message: "Get All Pm_MRA Details Successfully ",
