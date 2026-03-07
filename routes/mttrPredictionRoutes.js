@@ -11,10 +11,13 @@ import {
   getProcedure472,
   updateProcedure472,
   deleteProcedure472,
+  getAllMttr474,
 } from "../controllers/mttrPredictionController.js";
 import { verifyToken } from "../utils/tokenAuth.js";
 
 router.route("/details").get(verifyToken, getAllMttrPrediction);
+
+router.route("/details/mil472").get(verifyToken, getAllMttr474);
 
 router.route("/").post(verifyToken, createMttrPrediction);
 

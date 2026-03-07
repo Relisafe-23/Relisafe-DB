@@ -5,7 +5,7 @@ import { createOne, getAll, getOne, updateOne, deleteOne } from "./baseControlle
 export async function createPmMra(req, res, next) {
   try {
     const data = req.body;
-    
+
 
     // Check if record already exists using failureMode string, not fmecaModeId
     const existData = await pmMra.find({
@@ -15,7 +15,7 @@ export async function createPmMra(req, res, next) {
       fmecaId: data.fmecaModeId, // Use failureMode string, not fmecaModeId
     });
 
-    
+
 
     if (existData.length === 0) {
       const createData = await pmMra.create({
@@ -91,7 +91,7 @@ export async function createPmMra(req, res, next) {
         fmecaId: data.fmecaModeId, // Store the FMECA ID separately
       });
 
-      
+
       res.status(201).json({
         message: "PM MRA Created Successfully",
         data: {
@@ -185,7 +185,7 @@ export async function updatePmMra(req, res, next) {
       productId: data.productId,
     };
 
-    
+
 
     const editDetail = await pmMra.findOneAndUpdate(
       { fmecaId: data.pmMraId },   // ✅ filter object
@@ -213,14 +213,12 @@ export async function updatePmMra(req, res, next) {
 export async function getPmMraDetails(req, res, next) {
   try {
     const data = req.query;
-    console.log("data....", data)
     const pmMraData = await pmMra.findOne({
       projectId: data.projectId,
       productId: data.productId,
       companyId: data.companyId,
       // fmecaId: data.fmecaModeId,
     });
-    console.log("pmMraData......", pmMraData)
     res.status(201).json({
       message: "Get All Pm_MRA Details Successfully ",
       data: pmMraData,
