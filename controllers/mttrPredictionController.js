@@ -1255,10 +1255,11 @@ export async function updateMttrPrediction(req, res, next) {
 }
 
 export async function getMttrPrediction(req, res, next) {
+  console.log("get mttr prediction ")
   try {
     const id = req.params.id;
 
-    // console.log(id,'id mttr')
+    console.log(id,'id mttr')
 
     const mttrData = await mttrPrediction
       .findOne({ productId: id })
