@@ -20,7 +20,7 @@ router.route("/create/parent").post(createFTAtreeStructure);
 router.route("/get/:id").get(getFTAtreeDatas);
 router.route("/create/child/node").post(createChildNode);
 router.route("/update/:projectId/:childId").put(updateFTAtreeStructure);
-router.route("/delete/:projectId/:childId").delete(deleteFTAtreeStructure);
+router.route("/delete/:parantId/:deleteId").delete(deleteFTAtreeStructure);
 router.route("/gatecount/:projectId/:companyId").get(getLastGateId);
 router.route("/update/property/:id").patch(updateParentFTAtreeStructure);
 router.route("/get/child/:projectId/:parentId").get(getChildNode);

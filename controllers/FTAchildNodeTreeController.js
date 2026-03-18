@@ -266,88 +266,156 @@ export async function updateFTAtreeStructure(req, res, next) {
 }
 
 export async function deleteFTAtreeStructure(req, res, next) {
+  const { parantId, deleteId } = req.params; // Note: 'parantId' is misspelled
+  console.log(parantId, "- parentId");
+  console.log(deleteId, "- deleteId");
+  const tableId = req.query.tableParentId;
+  console.log(tableId, "- tableId");
+  
   try {
-    const projectId = req.params.projectId;
-    const childId = req.params.childId;
-    const tableId = req.query.tableParentId;
-
     const treeStructureData = await FTAtreeData.findOne({
-      projectId: projectId,
+      _id: parantId,
     });
 
-    if (tableId === null || tableId === undefined) {
-      function deleteNode(node) {
-        for (let i = 0; i < node.children.length; i++) {
-          if (node.children[i].id === childId) {
-            node.children.splice(i, 1);
-            return true;
-          } else if (deleteNode(node.children[i])) {
-            return true;
-          }
-        }
-        return false;
-      }
+    console.log(treeStructureData, 'vtreeStructureData');
 
-      if (deleteNode(treeStructureData.treeStructure)) {
-        await FTAtreeData.findOneAndUpdate(
-          { projectId: projectId },
-          { treeStructure: treeStructureData.treeStructure },
-          { new: true, runValidators: true }
-        );
-
-        res.status(200).json({
-          status: "Child Deleted",
-          message: "Child node deleted successfully.",
-        });
-      } else {
-        res.status(404).json({
-          message: "Child node not found with the specified Id.",
-        });
-      }
-    } else if (tableId) {
-      const deleteParent = await FTAtreeData.findByIdAndDelete({ _id: tableId });
-      res.status(200).json({
-        status: "Parent Deleted",
-        message: "Parent node deleted successfully.",
+    if (!treeStructureData) {
+      return res.status(404).json({
+        message: "Parent document not found."
       });
     }
-    // update index number after delete
-    await updateNodeIndex(projectId);
 
-    async function updateNodeIndex(projectId) {
-      const treeStructureData = await FTAtreeData.findOne({
-        projectId: projectId,
+    // FIX: Convert both IDs to strings for comparison
+    const treeStructureId = treeStructureData.treeStructure.id.toString();
+    const deleteIdStr = deleteId.toString();
+    
+    console.log("Comparing:", { treeStructureId, deleteIdStr });
+
+    // Check if this is a root node deletion (treeStructure.id matches deleteId)
+    if (treeStructureId === deleteIdStr) {
+      console.log("Deleting entire document - root node match");
+      // This is the root node - delete the entire document
+      await FTAtreeData.findByIdAndDelete(parantId);
+      
+      return res.status(200).json({
+        status: "Parent Deleted",
+        message: "Root node deleted successfully.",
       });
+    }
 
-      updateEachNode(treeStructureData.treeStructure);
-
-      async function updateEachNode(node) {
-        if (!node.children || node.children.length === 0) return;
-
-        node.children.sort((a, b) => {
-          const indexA = parseFloat(a.indexCount);
-          const indexB = parseFloat(b.indexCount);
-          return indexA - indexB;
+    // If tableId is provided and it's a valid ID (for parent deletion)
+    if (tableId && tableId !== 'null' && tableId !== 'undefined' && tableId !== '') {
+      console.log("Deleting parent document with tableId:", tableId);
+      const deleteParent = await FTAtreeData.findByIdAndDelete(tableId);
+      if (deleteParent) {
+        return res.status(200).json({
+          status: "Parent Deleted",
+          message: "Parent node deleted successfully.",
         });
+      }
+    }
 
-        for (let i = 0; i < node.children.length; i++) {
-          const child = node.children[i];
-          child.indexCount = `${node.indexCount}.${i + 1}`;
-          await FTAtreeData.findOneAndUpdate(
-            { projectId: projectId },
-            { treeStructure: treeStructureData.treeStructure },
-            { new: true, runValidators: true }
-          );
-          await updateEachNode(child);
+    // If we reach here, try to delete from children
+    console.log("Trying to delete from children");
+    
+    // Deep clone the tree structure
+    const treeStructure = JSON.parse(JSON.stringify(treeStructureData.treeStructure));
+    
+    function deleteNode(node) {
+      if (!node.children || node.children.length === 0) return false;
+      
+      for (let i = 0; i < node.children.length; i++) {
+        // Convert child ID to string for comparison
+        const childId = node.children[i].id.toString();
+        
+        if (childId === deleteIdStr) {
+          console.log("Found child to delete at index:", i);
+          // Remove the child
+          node.children.splice(i, 1);
+          return true;
+        } else if (node.children[i].children && node.children[i].children.length > 0) {
+          // Recursively check deeper
+          const deleted = deleteNode(node.children[i]);
+          if (deleted) return true;
         }
       }
+      return false;
+    }
+
+    const deleted = deleteNode(treeStructure);
+    
+    if (deleted) {
+      console.log("Child deleted, updating document");
+      // Update the document
+      await FTAtreeData.findOneAndUpdate(
+        { _id: parantId },
+        { treeStructure: treeStructure },
+        { new: true, runValidators: true }
+      );
+
+      // Update index numbers after deletion
+      await updateNodeIndex(parantId);
+
+      res.status(200).json({
+        status: "Child Deleted",
+        message: "Child node deleted successfully.",
+      });
+    } else {
+      console.log("Child not found with ID:", deleteIdStr);
+      res.status(404).json({
+        message: "Child node not found with the specified Id.",
+      });
     }
   } catch (err) {
+    console.error("Error in deleteFTAtreeStructure:", err);
     next(err);
   }
 }
 
+// Update function remains the same;
+async function updateNodeIndex(documentId) {
+  try {
+    const treeStructureData = await FTAtreeData.findOne({
+      _id: documentId,
+    });
+
+    if (!treeStructureData) return;
+
+    const treeStructure = JSON.parse(JSON.stringify(treeStructureData.treeStructure));
+    
+    function updateEachNode(node) {
+      if (!node.children || node.children.length === 0) return;
+
+      node.children.sort((a, b) => {
+        const indexA = parseFloat(a.indexCount) || 0;
+        const indexB = parseFloat(b.indexCount) || 0;
+        return indexA - indexB;
+      });
+
+      for (let i = 0; i < node.children.length; i++) {
+        const child = node.children[i];
+        child.indexCount = `${node.indexCount}.${i + 1}`;
+        
+        if (child.children && child.children.length > 0) {
+          updateEachNode(child);
+        }
+      }
+    }
+    
+    updateEachNode(treeStructure);
+
+    await FTAtreeData.findOneAndUpdate(
+      { _id: documentId },
+      { treeStructure: treeStructure },
+      { new: true, runValidators: true }
+    );
+  } catch (error) {
+    console.error("Error updating indices:", error);
+  }
+}
+
 export async function getLastGateId(req, res, next) {
+
   try {
     const data = req.params;
     let gateId = await FTAtreeData.find({
@@ -376,15 +444,17 @@ export async function getChildNode(req, res, next) {
     const parentId = req.params.parentId;
     const targetIndexCount = req.query.targetIndexCount;
 
-    console.log(projectId,"projectId")
-    console.log(parentId,"parentId")
-    console.log(targetIndexCount,"targetIndexCount")
+    console.log(projectId, "projectId")
+    console.log(parentId, "parentId")
+    console.log(targetIndexCount, "targetIndexCount")
 
 
     const treeStructureData = await FTAtreeData.findOne({
       _id: parentId,
       projectId: projectId,
     });
+
+    
 
     if (targetIndexCount === "1") {
       res.status(200).json(treeStructureData.treeStructure);
