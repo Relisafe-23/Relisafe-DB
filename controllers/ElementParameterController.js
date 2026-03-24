@@ -192,8 +192,7 @@ export const getElementParameterById = async (req, res) => {
 
 export const createParallelSection = async (req, res) => {
   const { rbdId, projectId } = req.params
-  console.log(rbdId, 'rbdId')
-  console.log(projectId, 'projectId')
+ 
   try {
     const {
       companyId,
@@ -475,6 +474,55 @@ export const deleteNestedBlock = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error deleting nested block',
+      error: error.message
+    });
+  }
+};
+
+export const createKOfN = async(req,res)=>{
+  const { rbdId, projectId } = req.params;
+  console.log(rbdId,projectId,"hjgbkbgkbkv")
+  try{
+    const{
+      k,
+      n,
+      lambda,
+      mu,
+      formula,
+      effectiveLambda,
+      effectiveMu,
+      mtbf  
+    } = req.body;
+    console.log("data nmhhhh",body)
+       if (!k || !n) {
+      return res.status(400).json({
+        success: false,
+        message: "k and n are required"
+      });
+  }
+
+  const KOfN = await KOfN.create({
+    rbdId,
+      projectId,
+      k,
+      n,
+      lambda,
+      mu,
+      formula,
+      effectiveLambda,
+      effectiveMu,
+      mtbf
+  });
+    res.status(201).json({
+    success: true,
+    data: KOfN 
+  });
+  } catch (error) {
+    console.error("KOfN Error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Error creating KOfN",
       error: error.message
     });
   }
