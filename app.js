@@ -81,6 +81,7 @@ app.use("/api/v1/library",libraryRoutes);
 app.use("/api/v1/reports",reportRoutes);
 app.use("/api/v1/elementParametersRBD",ElementParametersRBDRoutes);
 app.use("/api/v1/EditConfigRBD",EditConfigRBDRoutes);
+app.use("/api/v1/subrbd",ElementParametersRBDRoutes);
 // handle undefined Routes
 app.use("*", (req, res, next) => {
   const err = new AppError(404, "fail", "undefined route");

@@ -3,6 +3,36 @@ import mongoose from "mongoose";
 
 export const createElementParameter = async (req, res) => {
   const data = req.body;
+    try {
+    // Check if this is a SubRBD block
+    const isSubRBD = data.elementType === "SubRBD" || data.type === "SubRBD";
+    
+    let subRbdId = null;
+    let subRbdData = null;
+    
+    // If it's a SubRBD, validate and fetch the referenced RBD
+    if (isSubRBD && data.subRbdId) {
+      // You need to import RBDConfig model
+      const RBDConfig = mongoose.model("RBDConfig");
+      const referencedRBD = await RBDConfig.findById(data.subRbdId);
+      
+      if (!referencedRBD) {
+        return res.status(404).json({
+          success: false,
+          message: "Referenced RBD not found"
+        });
+      }
+      
+      subRbdId = data.subRbdId;
+      subRbdData = {
+        id: referencedRBD._id,
+        rbdTitle: referencedRBD.rbdTitle,
+        description: referencedRBD.description,
+        missionTime: referencedRBD.missionTime,
+        reliability: referencedRBD.reliability || null,
+        unavailability: referencedRBD.unavailability || null
+      };
+    }
   const elementParameters = await ElementParameterData.create({
     indexCount: data.indexCount,
     partNumber: data.partNumber,
@@ -28,13 +58,24 @@ export const createElementParameter = async (req, res) => {
     projectId: data.projectId,
     companyId: data.companyId,
     type: data.blockType || data.type || "Regular",
+      subRbdId: subRbdId,
+      subRbdData: subRbdData,
+      isSubRBD: isSubRBD
   });
   res.status(201).json({
     success: true,
     data: elementParameters
   });
 
+  } catch (error) {
+    console.error("Error creating element parameter:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
 }
+
 
 export const updateelementParameters = async (req, res) => {
   const data = req.body
@@ -42,6 +83,33 @@ export const updateelementParameters = async (req, res) => {
   console.log(id, 'id form frontend')
   console.log(data, 'data for update')
   try {
+
+        const isSubRBD = data.elementType === "SubRBD" || data.type === "SubRBD";
+    
+    let updateData = { ...data };
+    
+    // If updating SubRBD with new referenced RBD
+    if (isSubRBD && data.subRbdId) {
+      const RBDConfig = mongoose.model("RBDConfig");
+      const referencedRBD = await RBDConfig.findById(data.subRbdId);
+      
+      if (!referencedRBD) {
+        return res.status(404).json({
+          success: false,
+          message: "Referenced RBD not found"
+        });
+      }
+      
+      updateData.subRbdData = {
+        id: referencedRBD._id,
+        rbdTitle: referencedRBD.rbdTitle,
+        description: referencedRBD.description,
+        missionTime: referencedRBD.missionTime,
+        reliability: referencedRBD.reliability || null,
+        unavailability: referencedRBD.unavailability || null
+      };
+      updateData.isSubRBD = true;
+    }
     const elementParameters = await ElementParameterData.findByIdAndUpdate(
       // indexCount: data.indexCount,
       // partNumber: data.partNumber,
@@ -67,7 +135,7 @@ export const updateelementParameters = async (req, res) => {
       // companyId: data.companyId,
       id,
       data,
-      { new: true }
+{ new: true, runValidators: true }
     );
 
     if (!elementParameters) {
@@ -83,7 +151,11 @@ export const updateelementParameters = async (req, res) => {
       data: elementParameters
     });
   } catch (error) {
-    console.log(error)
+       console.log(error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
   }
 
 }
@@ -171,16 +243,47 @@ export const getElementParameterById = async (req, res) => {
   console.log(projectId, 'projectId')
 
   try {
-    const elementParameter = await ElementParameterData.find({ projectId, rbdId });
-    if (!elementParameter) {
-      return res.status(404).json({
-        success: false,
-        message: "Element Parameter not found",
+    // Convert string IDs to ObjectId if needed
+    const rbdObjectId = new mongoose.Types.ObjectId(rbdId);
+    const projectObjectId = new mongoose.Types.ObjectId(projectId);
+    
+    // ✅ FIX: Use elementParameters (plural) instead of elementParameter
+    const elementParameters = await ElementParameterData.find({ 
+      projectId: projectObjectId, 
+      rbdId: rbdObjectId 
+    });
+    
+    console.log('Found blocks:', elementParameters.length);
+    
+    if (!elementParameters || elementParameters.length === 0) {
+      return res.status(200).json({
+        success: true,
+        data: [],
+        message: "No blocks found for this RBD"
       });
     }
+    
+    // Process SubRBD blocks - convert to plain objects
+    const processedData = elementParameters.map(block => {
+      const blockObj = block.toObject ? block.toObject() : block;
+      
+      if (blockObj.elementType === "SubRBD" || blockObj.isSubRBD) {
+        return {
+          ...blockObj,
+          type: "SubRBD",
+          data: {
+            ...blockObj,
+            rbdData: blockObj.subRbdData,
+            rbdId: blockObj.subRbdId
+          }
+        };
+      }
+      return blockObj;
+    });
+
     res.status(200).json({
       success: true,
-      data: elementParameter,
+      data: processedData,
     });
   } catch (error) {
     res.status(500).json({
@@ -189,6 +292,165 @@ export const getElementParameterById = async (req, res) => {
     });
   }
 }
+
+
+
+// Get all available RBDs for SubRBD selection
+export const getAvailableRBDs = async (req, res) => {
+  try {
+    const { projectId, currentRbdId } = req.query;
+    
+    // Import RBDConfig model
+    const RBDConfig = mongoose.model("RBDConfig");
+    
+    let query = { projectId };
+    
+    // Exclude current RBD to prevent self-reference
+    if (currentRbdId) {
+      query._id = { $ne: currentRbdId };
+    }
+    
+    const rbdList = await RBDConfig.find(query)
+      .select("_id rbdTitle description missionTime displayUpper displayLower printRemarks")
+      .sort({ createdAt: -1 });
+    
+    // Calculate reliability for each RBD based on its blocks
+    const rbdListWithData = await Promise.all(
+      rbdList.map(async (rbd) => {
+        const blocks = await ElementParameterData.find({ rbdId: rbd._id });
+        const reliability = calculateRBDBlockReliability(blocks);
+        
+        return {
+          id: rbd._id,
+          rbdTitle: rbd.rbdTitle,
+          description: rbd.description,
+          missionTime: rbd.missionTime,
+          reliability: reliability,
+          unavailability: 1 - reliability,
+          ...rbd.toObject()
+        };
+      })
+    );
+    
+    res.json({
+      success: true,
+      data: rbdListWithData
+    });
+  } catch (error) {
+    console.error("Error fetching RBD list:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch RBD list",
+      error: error.message
+    });
+  }
+};
+
+// Helper function to calculate RBD reliability
+const calculateRBDBlockReliability = (blocks) => {
+  if (!blocks || blocks.length === 0) return 1.0;
+  
+  let reliability = 1.0;
+  
+  for (const block of blocks) {
+    if (block.elementType === "Regular" && block.mtbf) {
+      // Exponential reliability: R(t) = e^(-λt) where λ = 1/MTBF
+      const lambda = 1 / block.mtbf;
+      const time = block.time || 8760; // Default 1 year in hours
+      const blockReliability = Math.exp(-lambda * time);
+      reliability *= blockReliability;
+    } 
+    else if (block.elementType === "K-out-of-N" && block.k && block.n && block.mtbf) {
+      const lambda = 1 / block.mtbf;
+      const time = block.time || 8760;
+      const p = Math.exp(-lambda * time);
+      reliability *= calculateKOutOfNReliability(block.k, block.n, p);
+    }
+    else if (block.elementType === "SubRBD" && block.subRbdData) {
+      // Use stored reliability data
+      reliability *= (block.subRbdData.reliability || 1.0);
+    }
+    else if (block.type === "Parallel Section" && block.branches) {
+      // Calculate parallel section reliability
+      const branchReliabilities = block.branches.map(branch => {
+        let branchRel = 1.0;
+        branch.blocks.forEach(subBlock => {
+          if (subBlock.mtbf) {
+            const lambda = 1 / subBlock.mtbf;
+            const time = subBlock.time || 8760;
+            branchRel *= Math.exp(-lambda * time);
+          }
+        });
+        return branchRel;
+      });
+      
+      // Parallel reliability: 1 - ∏(1 - Ri)
+      let parallelRel = 1;
+      for (const rel of branchReliabilities) {
+        parallelRel *= (1 - rel);
+      }
+      reliability *= (1 - parallelRel);
+    }
+  }
+  
+  return reliability;
+};
+
+// Helper for K-out-of-N reliability
+const calculateKOutOfNReliability = (k, n, p) => {
+  let reliability = 0;
+  for (let i = k; i <= n; i++) {
+    reliability += combinations(n, i) * Math.pow(p, i) * Math.pow(1 - p, n - i);
+  }
+  return reliability;
+};
+
+// Helper for combinations (n choose k)
+const combinations = (n, k) => {
+  if (k > n) return 0;
+  if (k === 0 || k === n) return 1;
+  let result = 1;
+  for (let i = 1; i <= k; i++) {
+    result *= (n - i + 1) / i;
+  }
+  return result;
+};
+
+// Get SubRBD details with full block data
+export const getSubRBDDetails = async (req, res) => {
+  try {
+    const { subRbdId } = req.params;
+    
+    // Get the referenced RBD
+    const RBDConfig = mongoose.model("RBDConfig");
+    const rbd = await RBDConfig.findById(subRbdId);
+    
+    if (!rbd) {
+      return res.status(404).json({
+        success: false,
+        message: "RBD not found"
+      });
+    }
+    
+    // Get all blocks for this RBD
+    const blocks = await ElementParameterData.find({ rbdId: subRbdId });
+    
+    res.json({
+      success: true,
+      data: {
+        rbd: rbd,
+        blocks: blocks
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching SubRBD details:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch SubRBD details",
+      error: error.message
+    });
+  }
+};
 
 export const createParallelSection = async (req, res) => {
   const { rbdId, projectId } = req.params

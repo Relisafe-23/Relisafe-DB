@@ -96,7 +96,7 @@ const elementParameterSchema = new Schema(
 
     // Element Info
     type: {
-      type: String, // Regular | Parallel Section | K-of-N
+      type: String, // Regular | Parallel Section | K-of-N | subrbd
     },
     elementType: {
       type: String, // Regular | Parallel Section | Parallel Branch
@@ -150,6 +150,23 @@ const elementParameterSchema = new Schema(
 
     // Parallel section branches
     branches: [branchSchema],
+
+
+      subRbdId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "RBDConfig",
+      default: null
+    },
+    subRbdData: {
+      type: Schema.Types.Mixed, // Stores the referenced RBD data
+      default: null
+    },
+    
+    // Flag to identify SubRBD blocks
+    isSubRBD: {
+      type: Boolean,
+      default: false
+    },
 
   },
   { timestamps: true }
