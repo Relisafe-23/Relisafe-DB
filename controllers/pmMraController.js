@@ -246,5 +246,27 @@ export async function getPmMra(req, res, next) {
     next(error);
   }
 }
+export async function getPmMraForConnectLibrary(req, res, next) {
+  try {
+    const data = req.query;
+    console.log("data.....",data)
+    
+
+    const pmmraData = await pmMra.find({ projectId: data.projectId, productId: data.productId })
+      .populate("companyId")
+      .populate("productId")
+      .populate("projectId");
+
+      console.log("pmmraData...",pmmraData)
+    
+
+    res.status(200).json({
+      message: "Get PMMRA Details Successfully",
+      data: pmmraData,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
 
 export const deletePmMra = deleteOne(pmMra);
