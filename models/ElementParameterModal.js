@@ -150,13 +150,12 @@ const elementParameterSchema = new Schema(
 
     // Parallel section branches
     branches: [branchSchema],
-
-
       subRbdId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "RBDConfig",
       default: null
     },
+
     subRbdData: {
       type: Schema.Types.Mixed, // Stores the referenced RBD data
       default: null
