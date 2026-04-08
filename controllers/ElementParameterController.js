@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 export const createElementParameter = async (req, res) => {
   const data = req.body;
   const elementParameters = await ElementParameterData.create({
+    name: data.name,
     indexCount: data.indexCount,
     partNumber: data.partNumber,
     productName: data.productName,
@@ -68,6 +69,7 @@ export const updateelementParameters = async (req, res) => {
       id,
       data,
       { new: true }
+      
     );
 
     if (!elementParameters) {

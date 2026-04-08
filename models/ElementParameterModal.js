@@ -11,6 +11,10 @@ const blockSchema = new Schema({
   type: String, // Regular | SubSystem | K-out-of-N
   elementType: String, // Regular | K-out-of-N | SubRBD
   
+  name: String,
+  
+   
+
   // Reliability parameters
   mtbf: Number,
   fr: Number,
