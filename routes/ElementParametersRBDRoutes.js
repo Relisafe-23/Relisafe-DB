@@ -1,6 +1,6 @@
 import {Router} from "express";
 
-import {createElementParameter,getElementParameterById, createParallelSection, updateelementParameters, deleteelementParameters, updateNestedBlock, deleteNestedBlock,createKOfN, getAvailableRBDs, getSubRBDDetails } from "../controllers/ElementParameterController.js"
+import {createElementParameter,getElementParameterById, createParallelSection, updateelementParameters, deleteelementParameters, updateNestedBlock, deleteNestedBlock,getAvailableRBDs, getSubRBDDetails } from "../controllers/ElementParameterController.js"
 import { verifyToken } from "../utils/tokenAuth.js";
 
 const router= Router();
@@ -11,7 +11,7 @@ router.route("/deleteRBD/:parentId/block/:blockId").delete(verifyToken, deleteNe
 router.route("/deleteRBD/:id").delete(verifyToken,deleteelementParameters)
 router.route("/getRBD/:rbdId/:projectId").get(verifyToken, getElementParameterById )
 router.route("/create/parallelsection/:rbdId/:projectId").post(verifyToken, createParallelSection )
-router.route("/create/KOfN/:rbdId/:projectId").post(verifyToken,createKOfN)
+// router.route("/create/KOfN/:rbdId/:projectId").post(verifyToken,createKOfN)
 router.route("/EditConfigRBD").get(verifyToken, getAvailableRBDs)
 // router.route("/subrbd/:subRbdId").get(verifyToken, getSubRBDDetails)
 
