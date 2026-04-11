@@ -2,49 +2,69 @@ import mongoose from "mongoose";
 
 const { Schema, model } = mongoose;
 
-// Updated blockSchema with all regular block fields
+// Define branchSchema first (since blockSchema will reference it)
+const branchSchema = new Schema({
+  _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
+  index: Number,
+  name: String,
+  blocks: [Schema.Types.Mixed] // Will be populated with blockSchema after it's defined
+});
+
+// Define blockSchema that can contain branches
 const blockSchema = new Schema({
   // Basic info
+  _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
   index: Number,
-  blockId: Number, // UI block id (important later)
+  blockId: Number, // UI block id
   name: String,
-  type: String, // Regular | SubSystem | K-out-of-N
-  elementType: String, // Regular | K-out-of-N | SubRBD
-  
+  type: String, // Regular | Parallel Section | K-out-of-N | SubSystem
+  elementType: String, // Regular | K-out-of-N | SubRBD | Parallel Section
+
   // Reliability parameters
   mtbf: Number,
   fr: Number,
   time: Number,
-  
+
   // K-of-N parameters
   k: Number,
   n: Number,
-  
-  // Product details
+
+  // Parallel section specific fields (for nested parallel sections)
+  arrangement: {
+    type: String, // horizontal | vertical
+    default: "horizontal"
+  },
+  isNested: {
+    type: Boolean,
+    default: false
+  },
+  parentBranchId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "RBDElementParameterData.branches"
+  },
+  parentSectionId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "RBDElementParameterData"
+  },
+
+  // Nested branches - this allows parallel sections inside blocks
+  branches: [branchSchema], // ✅ Reusing branchSchema
+
+  // Other fields
   partNumber: String,
   productName: String,
   indexCount: String,
-  
-  // FMECA data
   fmecaId: Number,
   fmDescription: String,
-  
-  // Repair parameters
   repair: String,
   inspectionPeriod: String,
   dutyCycle: Number,
-  
-  // Visual parameters
   color: String,
-  
-  // Distribution parameters
   frDistribution: String,
   repairDistribution: String,
-  
-  // Load parameters
   load: Number,
   mct: Number,
-  
+
   // References
   rbdId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -62,17 +82,17 @@ const blockSchema = new Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Product",
   },
-  
+
   // Additional data
   reliabilityData: Schema.Types.Mixed
 });
 
-const branchSchema = new Schema({
-  index: Number,
-  name: String,
-  blocks: [blockSchema]
+// Now update branchSchema to use blockSchema properly
+branchSchema.add({
+  blocks: [blockSchema] 
 });
 
+// Main element parameter schema
 const elementParameterSchema = new Schema(
   {
     // RBD relation
@@ -148,7 +168,7 @@ const elementParameterSchema = new Schema(
     load: Number,
     mct: Number,
 
-    // Parallel section branches
+    // Parallel section branches - reuse branchSchema
     branches: [branchSchema],
 
   },
