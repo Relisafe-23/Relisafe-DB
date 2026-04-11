@@ -25,6 +25,8 @@ export const createElementParameter = async (req, res) => {
     n: data.n,
     repairDistribution: data.repairDistribution,
     load: data.load,
+    mtbf:data.mtbf,
+    mttr:data.mttr,
     mct: data.mct,
     projectId: data.projectId,
     companyId: data.companyId,
@@ -409,6 +411,7 @@ export const deleteNestedBlock = async (req, res) => {
           repairDistribution: blockToConvert.repairDistribution || parentSection.repairDistribution || 'Exponential',
           load: blockToConvert.load || parentSection.load || 100,
           mct: blockToConvert.mct || parentSection.mct || 0,
+          mttr:blockToConvert.mttr || parentSection.mttr || 0,
           name: blockToConvert.name || parentSection.name || 'Regular Block',
           elementType: 'Regular',
           type: 'Regular',
@@ -416,7 +419,7 @@ export const deleteNestedBlock = async (req, res) => {
           projectId: parentSection.projectId,
           companyId: parentSection.companyId
         };
-
+       console.log("regularBlockData...",regularBlockData)
         // Delete the old parallel section
         await ElementParameterData.findByIdAndDelete(parentId);
         
