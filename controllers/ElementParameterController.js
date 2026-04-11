@@ -551,6 +551,7 @@ export const updateelementParameters = async (req, res) => {
       id,
       data,
       { new: true }
+      
     );
 
     if (!elementParameters) {
@@ -1949,6 +1950,8 @@ export const getElementParameterById = async (req, res) => {
 
 
 // working both parallel
+
+
 export const createParallelSection = async (req, res) => {
   const { rbdId, projectId } = req.params;
 
