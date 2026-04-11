@@ -4,6 +4,19 @@ import mongoose from "mongoose";
 export const createElementParameter = async (req, res) => {
   const data = req.body;
   const elementParameters = await ElementParameterData.create({
+<<<<<<< Updated upstream
+=======
+    name: data.name,
+  k: data.k,
+  n: data.n,
+   lambda: data.lambda,
+   reliability: data.reliability,
+   unavailability: data.unavailability,
+   mu: data.mu,
+   mttr: data.mttr,
+   productId: data.productId,
+
+>>>>>>> Stashed changes
     indexCount: data.indexCount,
     partNumber: data.partNumber,
     productName: data.productName,
@@ -27,7 +40,12 @@ export const createElementParameter = async (req, res) => {
     mct: data.mct,
     projectId: data.projectId,
     companyId: data.companyId,
-    type: data.blockType || data.type || "Regular",
+    type: data.blockType || data.type || "Regular" || "K-out-of-N",
+     kOfNType: data.kOfNType || data.selectedLabel || 'Identical',
+    // Save components for non-identical
+    components: data.components || [],
+    // Save load sharing config
+    // loadSharingConfig: data.loadSharingConfig || null
   });
   res.status(201).json({
     success: true,
