@@ -4,8 +4,6 @@ import mongoose from "mongoose";
 export const createElementParameter = async (req, res) => {
   const data = req.body;
   const elementParameters = await ElementParameterData.create({
-<<<<<<< Updated upstream
-=======
     name: data.name,
   k: data.k,
   n: data.n,
@@ -16,7 +14,6 @@ export const createElementParameter = async (req, res) => {
    mttr: data.mttr,
    productId: data.productId,
 
->>>>>>> Stashed changes
     indexCount: data.indexCount,
     partNumber: data.partNumber,
     productName: data.productName,
