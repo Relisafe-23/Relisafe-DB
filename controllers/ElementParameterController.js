@@ -23,6 +23,7 @@ export const createElementParameter = async (req, res) => {
     frDistribution: data.frDistribution,
     k: data.k,
     n: data.n,
+    mttr:data.mttr,
     repairDistribution: data.repairDistribution,
     load: data.load,
     mct: data.mct,
@@ -30,6 +31,7 @@ export const createElementParameter = async (req, res) => {
     companyId: data.companyId,
     type: data.blockType || data.type || "Regular",
   });
+  console.log("elementParameters",elementParameters);
   res.status(201).json({
     success: true,
     data: elementParameters
@@ -409,6 +411,7 @@ export const deleteNestedBlock = async (req, res) => {
           repairDistribution: blockToConvert.repairDistribution || parentSection.repairDistribution || 'Exponential',
           load: blockToConvert.load || parentSection.load || 100,
           mct: blockToConvert.mct || parentSection.mct || 0,
+          mttr:blockToConvert.mttr||parentSection.mttr||0,
           name: blockToConvert.name || parentSection.name || 'Regular Block',
           elementType: 'Regular',
           type: 'Regular',

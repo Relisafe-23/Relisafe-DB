@@ -151,7 +151,7 @@ const elementParameterSchema = new Schema(
     repairDistribution: String,
     load: Number,
     mct: Number,
-
+    mttr:Number,
     // Parallel section branches
     branches: [branchSchema],
 
