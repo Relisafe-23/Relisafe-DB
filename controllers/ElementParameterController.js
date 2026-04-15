@@ -13,7 +13,7 @@ export const createElementParameter = async (req, res) => {
    mu: data.mu,
    mttr: data.mttr,
    productId: data.productId,
-
+    // productId: "692013b2dc0b1e4b0c9a3d44",
     indexCount: data.indexCount,
     partNumber: data.partNumber,
     productName: data.productName,

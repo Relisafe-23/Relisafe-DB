@@ -149,19 +149,19 @@ const elementParameterSchema = new Schema(
     },
     
     // For Non-Identical K-out-of-N (store components if needed)
-    // components: [{
-    //   lambda: Number,
-    //   mu: Number,
-    //   mttr: String,
-    //   productId: {
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: "Product",
-    //   },
-    //   productName: String,
-    //   reliability: Number,
-    //   unavailability: Number,
-    //   isManual: Boolean
-    // }],
+    components: [{
+      lambda: Number,
+      mu: Number,
+      mttr: String,
+      productId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Product",
+      },
+      productName: String,
+      reliability: Number,
+      unavailability: Number,
+      isManual: Boolean
+    }],
     
     
 
