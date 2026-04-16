@@ -250,6 +250,8 @@ export const createElementParameter = async (req, res) => {
     console.log(idforApi, ": idforApi");
     console.log(targetId, ": targetId");
 
+    console.log(data, 'data')
+
     // ─── CASE 1: idforApi exists — insert into branch by ItemId ──────────────
     if (idforApi) {
       console.log('itemId idfor api');
@@ -257,7 +259,40 @@ export const createElementParameter = async (req, res) => {
 
       const parentDocument = await ElementParameterData.findById(ItemId);
       if (!parentDocument) {
-        return res.status(404).json({ success: false, message: "Parent document not found" });
+        console.log("Parent not found → creating standalone element");
+
+        const newElement = await ElementParameterData.create({
+          indexCount: data.indexCount,
+          partNumber: data.partNumber,
+          productName: data.productName,
+          rbdId: data.rbdId,
+          fr: data.fr,
+          blockId: data.blockId || Date.now(),
+          productId: data.productId,
+          fmecaId: data.fmecaId,
+          fmDescription: data.fmDescription,
+          elementType: data.elementType,
+          time: data.time,
+          repair: data.repair,
+          inspectionPeriod: data.inspectionPeriod,
+          dutyCycle: data.dutyCycle,
+          color: data.color,
+          frDistribution: data.frDistribution,
+          k: data.k,
+          n: data.n,
+          repairDistribution: data.repairDistribution,
+          load: data.load,
+          mct: data.mct,
+          projectId: data.projectId,
+          companyId: data.companyId,
+          type: data.blockType || data.type || "Regular",
+        });
+
+        return res.status(201).json({
+          success: true,
+          message: "Standalone element created (no parent)",
+          data: newElement
+        });
       }
 
       const findBranchRecursively = (branches, targetBranchId) => {
@@ -715,11 +750,62 @@ export const createElementParameter = async (req, res) => {
     //   type: data.blockType || data.type || "Regular",
     // });
 
+
+    // below is working code 
+
+    // const docs = await ElementParameterData.find({ rbdId: data.rbdId });
+
+    // let arr = docs.map(doc => doc.toObject());
+
+    // // Insert logic
+    // if (!targetId) {
+    //   arr.push({
+    //     ...data,
+    //     _id: new mongoose.Types.ObjectId()
+    //   });
+    // } else {
+    //   const targetIndex = arr.findIndex(
+    //     d => d._id.toString() === targetId.toString()
+    //   );
+
+    //   if (targetIndex === -1) {
+    //     return res.status(404).json({ message: "Target not found" });
+    //   }
+
+    //   arr.splice(targetIndex + 1, 0, {
+    //     ...data,
+    //     _id: new mongoose.Types.ObjectId()
+    //   });
+    // }
+
+    // // Save back
+    // await ElementParameterData.deleteMany({ rbdId: data.rbdId });
+    // await ElementParameterData.insertMany(arr);
+
+    // return res.status(201).json({
+    //   success: true,
+    //   data: arr
+    // });
+
     const docs = await ElementParameterData.find({ rbdId: data.rbdId });
 
     let arr = docs.map(doc => doc.toObject());
 
-    // Insert logic
+    if (arr.length === 0) {
+      const newDoc = {
+        ...data,
+        _id: new mongoose.Types.ObjectId()
+      };
+
+      await ElementParameterData.create(newDoc);
+
+      return res.status(201).json({
+        success: true,
+        message: "First element created",
+        data: [newDoc]
+      });
+    }
+
     if (!targetId) {
       arr.push({
         ...data,
@@ -740,7 +826,6 @@ export const createElementParameter = async (req, res) => {
       });
     }
 
-    // Save back
     await ElementParameterData.deleteMany({ rbdId: data.rbdId });
     await ElementParameterData.insertMany(arr);
 
@@ -2749,7 +2834,7 @@ export const deleteNestedBlock = async (req, res) => {
           projectId: modifiedSection.projectId,
           companyId: modifiedSection.companyId
         };
-       console.log("regularBlockData...",regularBlockData)
+        console.log("regularBlockData...", regularBlockData)
         // Delete the old parallel section
         await ElementParameterData.findByIdAndDelete(parentId);
 
