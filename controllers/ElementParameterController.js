@@ -402,7 +402,7 @@ export const createElementParameter = async (req, res) => {
         type: data.blockType || data.type || "Regular",
         elementType: data.elementType || data.type || "Regular",
         fr: data.fr || 0.001,
-        mtbf: data.mtbf || (data.fr ? 1000 / data.fr : 1000),
+        mtbf: data.mtbf ,
         time: data.time,
         repair: data.repair,
         inspectionPeriod: data.inspectionPeriod,
@@ -412,6 +412,9 @@ export const createElementParameter = async (req, res) => {
         repairDistribution: data.repairDistribution,
         load: data.load,
         mct: data.mct,
+        mttr: data.mttr,
+        reliability: data.reliability,
+        unavailability: data.unavailability,
         partNumber: data.partNumber,
         productName: data.productName,
         fmecaId: data.fmecaId,
@@ -438,7 +441,6 @@ export const createElementParameter = async (req, res) => {
       };
 
       let updatedRBD;
-
       if (parentPath.length > 0) {
         // Nested branch
         console.log('Updating nested branch');
@@ -514,9 +516,37 @@ export const createElementParameter = async (req, res) => {
       }
     }
 
-    // ─── CASE 2: targetId exists, no idforApi — find branch by rbdId ─────────
-    // if (targetId && !idforApi) {
-    //   const parentDocument = await ElementParameterData.find({ rbdId: data.rbdId });
+    // If no idforApi, create separate ElementParameterData
+    // const elementParameters = await ElementParameterData.create({
+    //   indexCount: data.indexCount,
+    //   partNumber: data.partNumber,
+    //   productName: data.productName,
+    //   rbdId: data.rbdId,
+    //   fr: data.fr,
+    //   blockId: data.blockId,
+    //   productId: data.productId,
+    //   fmecaId: data.fmecaId,
+    //   fmDescription: data.fmDescription,
+    //   elementType: data.elementType,
+    //   time: data.time,
+    //   repair: data.repair,
+    //   mtbf:data.mtbf,
+    //   mttr: data.mttr,
+    //   reliability: data.reliability,
+    //   unavailability: data.unavailability,
+    //   inspectionPeriod: data.inspectionPeriod,
+    //   dutyCycle: data.dutyCycle,
+    //   color: data.color,
+    //   frDistribution: data.frDistribution,
+    //   k: data.k,
+    //   n: data.n,
+    //   repairDistribution: data.repairDistribution,
+    //   load: data.load,
+    //   mct: data.mct,
+    //   projectId: data.projectId,
+    //   companyId: data.companyId,
+    //   type: data.blockType || data.type || "Regular",
+    // });
 
     //   console.log(parentDocument, 'parentDocument');
 
@@ -812,6 +842,7 @@ export const createElementParameter = async (req, res) => {
         _id: new mongoose.Types.ObjectId()
       });
     } else {
+      console.log("Workking with taret id",targetId)
       const targetIndex = arr.findIndex(
         d => d._id.toString() === targetId.toString()
       );
@@ -975,9 +1006,7 @@ export const getElementParameterById = async (req, res) => {
   const { rbdId, projectId } = req.params
   const data = req.body;
 
-  console.log(data, 'data')
-  console.log(rbdId, 'rbdId')
-  console.log(projectId, 'projectId')
+  
 
   try {
     const elementParameter = await ElementParameterData.find({ projectId, rbdId });
@@ -987,6 +1016,7 @@ export const getElementParameterById = async (req, res) => {
         message: "Element Parameter not found",
       });
     }
+    console.log("elementParameters12334567",elementParameter[29]);
     res.status(200).json({
       success: true,
       data: elementParameter,
@@ -998,1284 +1028,6 @@ export const getElementParameterById = async (req, res) => {
     });
   }
 }
-
-// export const createParallelSection = async (req, res) => {
-//   const { rbdId, projectId } = req.params;
-//   console.log(rbdId, "rbdId para sec")
-//   console.log(projectId, "projectId para sec")
-
-//   console.log(req.body, 'req.body for data')
-
-//   try {
-//     const {
-//       companyId,
-//       productId,
-//       name,
-//       arrangement,
-//       k,
-//       n,
-//       branches,
-//       data,
-//       isNested,
-//       parentId,
-//       targetId,
-//     } = req.body;
-
-//     if (targetId && parentId) {
-//       console.log("============================")
-//       console.log("it can be insert to nested ")
-//       console.log("============================")
-
-//       const parentDocument = await ElementParameterData.findById(parentId);
-//       if (!parentDocument) {
-//         return res.status(404).json({
-//           success: false,
-//           message: "Parent document not found"
-//         });
-//       }
-
-//       console.log(parentDocument, 'parentDocument')
-
-
-
-//       if (parentDocument?.elementType === 'Parallel Section') {
-//         console.log('correct');
-//         var loopbranch = parentDocument?.branches;
-
-//         for (let i = 0; i < loopbranch.length; i++) {
-//           console.log(loopbranch[i].blocks);
-
-//           if (loopbranch[i].blocks && loopbranch[i].blocks.length > 0) {
-//             console.log('entered inner loop');
-
-//             for (let j = 0; j < loopbranch[i].blocks.length; j++) {
-//               const block = loopbranch[i].blocks[j];
-
-//               if ((block.type === 'Parallel Section' || block.elementType === 'Parallel Section') &&
-//                 block.branches && block.branches.length > 0) {
-//                 console.log('Found nested parallel section in block:', block._id);
-
-//                 for (let k = 0; k < block.branches.length; k++) {
-//                   const nestedBranch = block.branches[k];
-//                   console.log('Nested branch', k, 'blocks:', nestedBranch.blocks);
-
-//                   // Fix: Need to loop through blocks array to find matching block ID
-//                   if (nestedBranch.blocks && nestedBranch.blocks.length > 0) {
-//                     for (let m = 0; m < nestedBranch.blocks.length; m++) {
-//                       const nestedBlock = nestedBranch.blocks[m];
-//                       if (targetId === nestedBlock._id.toString()) {
-//                         console.log('Found target block:', targetId);
-//                         console.log('Parent branch ID where this block belongs:', nestedBranch._id);
-//                         console.log('This is the branch where I need to put the new element:', nestedBranch._id);
-
-//                         // Store the found branch ID for later use
-//                         const foundBranchId = nestedBranch._id;
-//                         // Now you can add your new element to this branch's blocks array
-//                       }
-//                     }
-//                   }
-
-//                   // Alternative: If you're looking for the branch ID itself
-//                   if (targetId === nestedBranch._id.toString()) {
-//                     console.log('Target is the branch itself:', nestedBranch._id);
-//                     console.log('This is the branch where I need to put the new element:', nestedBranch._id);
-//                   }
-//                 }
-//               }
-//             }
-//           }
-//           console.log(i, "'th branch ");
-//         }
-//       }
-
-//       // const findBranchPath = (branches, targetBranchId, currentPath = []) => {
-//       //   for (let i = 0; i < branches.length; i++) {
-//       //     const branch = branches[i];
-
-//       //     // Check if this branch matches
-//       //     // console.log(branch._id, branch,'iiiiiiiiiiiii')
-//       //     if (branch._id.toString() === targetId) {
-//       //       console.log(blocks)
-//       //       return {
-//       //         found: true,
-//       //         branchIndex: i,
-//       //         branch: branch,
-//       //         path: [...currentPath, { branchIndex: i, isBranch: true }]
-//       //       };
-//       //     }
-
-//       //     // Check if any block in this branch contains nested parallel sections
-//       //     if (branch.blocks && branch.blocks.length > 0) {
-//       //       for (let j = 0; j < branch.blocks.length; j++) {
-//       //         const block = branch.blocks[j];
-//       //         if ((block.type === 'Parallel Section' || block.elementType === 'Parallel Section') &&
-//       //           block.branches && block.branches.length > 0) {
-//       //           // Recursively search in nested parallel section
-//       //           const result = findBranchPath(block.branches, targetBranchId,
-//       //             [...currentPath, { branchIndex: i, blockIndex: j, isParallelBlock: true }]);
-//       //           if (result.found) return result;
-//       //         }
-//       //       }
-//       //     }
-//       //   }
-//       //   return { found: false };
-//       // };
-//     }
-
-
-
-
-//     // If idforApi exists, we're adding a nested parallel section to an existing branch
-//     if (data?.idforApi) {
-//       // console.log(data?.idforApi, ' - idforApi data');
-
-//       const { ItemId, branchId, branchIndex, location } = data.idforApi;
-
-//       // console.log(`Adding nested parallel section to branch ${branchId} at location: ${location}`);
-
-//       // Find the parent parallel section
-//       const parentDocument = await ElementParameterData.findById(ItemId);
-//       if (!parentDocument) {
-//         return res.status(404).json({
-//           success: false,
-//           message: "Parent parallel section not found"
-//         });
-//       }
-
-//       // console.log(parentDocument, 'parentDocument')
-
-//       // Find the specific branch
-//       const targetBranch = parentDocument.branches.find(
-//         b => b._id.toString() === branchId || b.index === branchIndex
-//       );
-
-//       console.log(targetBranch, 'target branch details');
-//       console.log(branchId, 'branchId');
-//       console.log(branchIndex, 'branchIndex');
-
-//       if (!targetBranch) {
-//         return res.status(404).json({
-//           success: false,
-//           message: "Branch not found"
-//         });
-//       }
-
-//       // // Validate that we have branches data for the nested parallel section
-//       if (!branches || !Array.isArray(branches) || branches.length === 0) {
-//         return res.status(400).json({
-//           success: false,
-//           message: "Branches data is required for nested parallel section"
-//         });
-//       }
-
-//       // // Format the nested branches with their blocks
-//       const formattedNestedBranches = branches.map((nestedBranch, branchIdx) => {
-//         let blocks = nestedBranch.blocks || [];
-
-//         // If blocks came as string convert to array
-//         if (typeof blocks === "string") {
-//           try {
-//             blocks = JSON.parse(blocks);
-//           } catch (err) {
-//             blocks = [];
-//           }
-//         }
-
-//         // Format each block in the nested branch
-//         const formattedBlocks = blocks.map((block, blockIdx) => ({
-//           _id: new mongoose.Types.ObjectId(),
-//           index: blockIdx,
-//           blockId: block.id || block.blockId || Date.now() + blockIdx,
-//           name: block.name || `Block ${blockIdx + 1}`,
-//           type: block.type || "Regular",
-//           elementType: block.type || "Regular",
-//           fr: block.fr ?? block.failureRate ?? 0.001,
-//           mtbf: block.mtbf ?? 1000,
-//           ...(block.type === "Regular" && {
-//             // Regular block fields
-//             partNumber: block.partNumber,
-//             productName: block.productName,
-//             fmecaId: block.fmecaId,
-//             fmDescription: block.fmDescription,
-//             time: block.time,
-//             repair: block.repair,
-//             inspectionPeriod: block.inspectionPeriod,
-//             dutyCycle: block.dutyCycle,
-//             color: block.color,
-//             frDistribution: block.frDistribution,
-//             repairDistribution: block.repairDistribution,
-//             load: block.load,
-//             mct: block.mct,
-//           }),
-//           reliabilityData: block.reliabilityData || null
-//         }));
-
-//         return {
-//           _id: new mongoose.Types.ObjectId(),
-//           index: branchIdx,
-//           name: nestedBranch.name || `Nested Branch ${branchIdx + 1}`,
-//           blocks: formattedBlocks
-//         };
-//       });
-
-//       // // Create the nested parallel section block
-//       const nestedParallelBlock = {
-//         _id: new mongoose.Types.ObjectId(),
-//         index: targetBranch.blocks?.length || 0,
-//         blockId: req.body.blockId || Date.now(),
-//         name: name || "Nested Parallel Section",
-//         type: "Parallel Section",
-//         elementType: "Parallel Section",
-//         fr: null,
-//         mtbf: null,
-//         arrangement: arrangement || "horizontal",
-//         k: k || 1,
-//         n: n || branches.length,
-//         branches: formattedNestedBranches,  // This contains all nested branches
-//         isNested: true,
-//         parentBranchId: branchId,
-//         parentSectionId: ItemId,
-//         reliabilityData: {
-//           elementType: "Parallel Section",
-//           isNestedParallel: true,
-//           arrangement: arrangement || "horizontal",
-//           k: k || 1,
-//           n: n || branches.length,
-//           parentBranchId: branchId,
-//           parentSectionId: ItemId,
-//           branchCount: branches.length
-//         }
-//       };
-
-//       let updatedDocument;
-//       let insertedPosition = 'right';
-
-//       // // Determine insertion position based on location
-//       if (location && location.includes('left')) {
-//         // Insert at the beginning (left side)
-//         updatedDocument = await ElementParameterData.findOneAndUpdate(
-//           {
-//             "_id": ItemId,
-//             "branches._id": branchId
-//           },
-//           {
-//             "$push": {
-//               "branches.$.blocks": {
-//                 "$each": [nestedParallelBlock],
-//                 "$position": 0
-//               }
-//             }
-//           },
-//           { new: true }
-//         );
-//         insertedPosition = 'left';
-
-//         // Reindex all blocks in this branch
-//         if (updatedDocument) {
-//           const updatedBranch = updatedDocument.branches.find(
-//             b => b._id.toString() === branchId
-//           );
-
-//           if (updatedBranch) {
-//             const updatePromises = updatedBranch.blocks.map((block, idx) => {
-//               return ElementParameterData.updateOne(
-//                 {
-//                   "_id": ItemId,
-//                   "branches._id": branchId,
-//                   "branches.blocks._id": block._id
-//                 },
-//                 {
-//                   "$set": {
-//                     "branches.$[branch].blocks.$[block].index": idx
-//                   }
-//                 },
-//                 {
-//                   "arrayFilters": [
-//                     { "branch._id": branchId },
-//                     { "block._id": block._id }
-//                   ]
-//                 }
-//               );
-//             });
-
-//             await Promise.all(updatePromises);
-//             updatedDocument = await ElementParameterData.findById(ItemId);
-//           }
-//         }
-
-//         console.log(`Nested parallel section with ${branches.length} branches added to left side`);
-
-//       } else if (location && location.includes('mid')) {
-//         // Insert in the middle (between existing blocks)
-//         const parts = location.split('-');
-//         const midIndex = parseInt(parts[parts.length - 1]);
-
-//         updatedDocument = await ElementParameterData.findOneAndUpdate(
-//           {
-//             "_id": ItemId,
-//             "branches._id": branchId
-//           },
-//           {
-//             "$push": {
-//               "branches.$.blocks": {
-//                 "$each": [nestedParallelBlock],
-//                 "$position": midIndex + 1
-//               }
-//             }
-//           },
-//           { new: true }
-//         );
-//         insertedPosition = `mid-${midIndex + 1}`;
-
-//         // Reindex all blocks in this branch after insertion
-//         if (updatedDocument) {
-//           const updatedBranch = updatedDocument.branches.find(
-//             b => b._id.toString() === branchId
-//           );
-
-//           if (updatedBranch) {
-//             const updatePromises = updatedBranch.blocks.map((block, idx) => {
-//               return ElementParameterData.updateOne(
-//                 {
-//                   "_id": ItemId,
-//                   "branches._id": branchId,
-//                   "branches.blocks._id": block._id
-//                 },
-//                 {
-//                   "$set": {
-//                     "branches.$[branch].blocks.$[block].index": idx
-//                   }
-//                 },
-//                 {
-//                   "arrayFilters": [
-//                     { "branch._id": branchId },
-//                     { "block._id": block._id }
-//                   ]
-//                 }
-//               );
-//             });
-
-//             await Promise.all(updatePromises);
-//             updatedDocument = await ElementParameterData.findById(ItemId);
-//           }
-//         }
-
-//         console.log(`Nested parallel section added at position ${midIndex + 1}`);
-
-//       } else {
-//         // Default: Add at the end (right side)
-//         const nextIndex = targetBranch.blocks?.length > 0
-//           ? Math.max(...targetBranch.blocks.map(b => b.index || 0)) + 1
-//           : 0;
-
-//         nestedParallelBlock.index = nextIndex;
-
-//         updatedDocument = await ElementParameterData.findOneAndUpdate(
-//           {
-//             "_id": ItemId,
-//             "branches._id": branchId
-//           },
-//           {
-//             "$push": {
-//               "branches.$.blocks": nestedParallelBlock
-//             }
-//           },
-//           { new: true }
-//         );
-
-//         console.log(`Nested parallel section with ${branches.length} branches added to right side`);
-//       }
-
-//       if (updatedDocument) {
-//         return res.status(200).json({
-//           success: true,
-//           message: `Nested parallel section with ${branches.length} branches added to branch at ${insertedPosition} position`,
-//           data: updatedDocument,
-//           newBlock: nestedParallelBlock,
-//           position: insertedPosition
-//         });
-//       } else {
-//         throw new Error("Failed to add nested parallel section to branch");
-//       }
-//     }
-
-//     // If no idforApi, create a new top-level parallel section
-//     if (!branches || !Array.isArray(branches) || branches.length === 0) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Branches data is required for new parallel section"
-//       });
-//     }
-
-//     // Format branches for top-level parallel section
-//     const formattedBranches = branches.map((branch, branchIdx) => {
-//       let blocks = branch.blocks || [];
-
-//       if (typeof blocks === "string") {
-//         try {
-//           blocks = JSON.parse(blocks);
-//         } catch (err) {
-//           blocks = [];
-//         }
-//       }
-
-//       const formattedBlocks = blocks.map((block, blockIdx) => ({
-//         _id: new mongoose.Types.ObjectId(),
-//         index: blockIdx,
-//         blockId: block.id || block.blockId || Date.now() + blockIdx,
-//         name: block.name || `Block ${blockIdx + 1}`,
-//         type: block.type || "Regular",
-//         elementType: block.type || "Regular",
-//         fr: block.fr ?? block.failureRate ?? 0.001,
-//         mtbf: block.mtbf ?? 1000,
-//         ...(block.type === "Regular" && {
-//           partNumber: block.partNumber,
-//           productName: block.productName,
-//           fmecaId: block.fmecaId,
-//           fmDescription: block.fmDescription,
-//           time: block.time,
-//           repair: block.repair,
-//           inspectionPeriod: block.inspectionPeriod,
-//           dutyCycle: block.dutyCycle,
-//           color: block.color,
-//           frDistribution: block.frDistribution,
-//           repairDistribution: block.repairDistribution,
-//           load: block.load,
-//           mct: block.mct,
-//         }),
-//         reliabilityData: block.reliabilityData || null
-//       }));
-
-//       return {
-//         _id: new mongoose.Types.ObjectId(),
-//         index: branchIdx,
-//         name: branch.name || `Branch ${branchIdx + 1}`,
-//         blocks: formattedBlocks
-//       };
-//     });
-
-//     const parallelSection = await ElementParameterData.create({
-//       rbdId,
-//       projectId,
-//       companyId,
-//       productId,
-//       name: name || "Parallel Section",
-//       type: "Parallel Section",
-//       elementType: "Parallel Section",
-//       arrangement: arrangement || "horizontal",
-//       k: k || 1,
-//       n: n || branches.length,
-//       branches: formattedBranches,
-//       isParallel: true
-//     });
-
-//     res.status(201).json({
-//       success: true,
-//       message: `Parallel Section created successfully with ${branches.length} branches`,
-//       data: parallelSection
-//     });
-
-//   } catch (error) {
-//     console.error("Parallel Section Error:", error);
-//     res.status(500).json({
-//       success: false,
-//       message: "Error creating/updating Parallel Section",
-//       error: error.message
-//     });
-//   }
-// };
-
-
-
-
-// export const createParallelSection = async (req, res) => {
-//   const { rbdId, projectId } = req.params;
-//   console.log(rbdId, "rbdId para sec");
-//   console.log(projectId, "projectId para sec");
-//   console.log(req.body, 'req.body for data');
-
-//   try {
-//     const {
-//       companyId,
-//       productId,
-//       name,
-//       arrangement,
-//       k,
-//       n,
-//       branches,
-//       data,
-//       isNested,
-//       parentId,
-//       targetId,  // This is the BRANCH ID (69d4a5b5fc410e29cfa59865) where we add the parallel section as a block
-//     } = req.body;
-
-//     // CASE 1: Adding parallel section as a block to a branch (using targetId as branch ID)
-//     if (targetId && parentId) {
-//       console.log("============================");
-//       console.log("Adding parallel section as a block to branch");
-//       console.log("Target Branch ID:", targetId);
-//       console.log("Parent Section ID:", parentId);
-//       console.log("============================");
-
-//       // Find the parent document
-//       const parentDocument = await ElementParameterData.findById(parentId);
-//       if (!parentDocument) {
-//         return res.status(404).json({
-//           success: false,
-//           message: "Parent document not found"
-//         });
-//       }
-
-//       console.log(parentDocument)
-
-//       // Function to find a branch recursively (including nested branches)
-//       const findBranchPath = (branches, targetBranchId, currentPath = []) => {
-//         for (let i = 0; i < branches.length; i++) {
-//           const branch = branches[i];
-
-//           // Check if this branch matches
-//           // console.log(branch._id, branch,'iiiiiiiiiiiii')
-//           if (branch._id.toString() === targetId) {
-//             console.log(blocks)
-//             return { 
-//               found: true, 
-//               branchIndex: i, 
-//               branch: branch,
-//               path: [...currentPath, { branchIndex: i, isBranch: true }]
-//             };
-//           }
-
-//           // Check if any block in this branch contains nested parallel sections
-//           if (branch.blocks && branch.blocks.length > 0) {
-//             for (let j = 0; j < branch.blocks.length; j++) {
-//               const block = branch.blocks[j];
-//               if ((block.type === 'Parallel Section' || block.elementType === 'Parallel Section') && 
-//                   block.branches && block.branches.length > 0) {
-//                 // Recursively search in nested parallel section
-//                 const result = findBranchPath(block.branches, targetBranchId, 
-//                   [...currentPath, { branchIndex: i, blockIndex: j, isParallelBlock: true }]);
-//                 if (result.found) return result;
-//               }
-//             }
-//           }
-//         }
-//         return { found: false };
-//       };
-
-//       // Find the target branch
-//       const branchLocation = findBranchPath(parentDocument.branches, targetId);
-
-//       console.log(branchLocation, 'branchLocation');
-
-//       if (!branchLocation.found) {
-//         return res.status(404).json({
-//           success: false,
-//           message: `Target branch not found with id: ${targetId}`
-//         });
-//       }
-
-//       const targetBranch = branchLocation.branch;
-//       console.log('Found target branch:', targetBranch._id, 'Branch Name:', targetBranch.name);
-//       console.log('Current blocks in branch:', targetBranch.blocks.length);
-
-//       // Validate that we have branches data for the new parallel section
-//       if (!branches || !Array.isArray(branches) || branches.length === 0) {
-//         return res.status(400).json({
-//           success: false,
-//           message: "Branches data is required for parallel section"
-//         });
-//       }
-
-//       // Format the branches for the new parallel section
-//       const formattedNestedBranches = branches.map((nestedBranch, branchIdx) => {
-//         let blocks = nestedBranch.blocks || [];
-
-//         if (typeof blocks === "string") {
-//           try {
-//             blocks = JSON.parse(blocks);
-//           } catch (err) {
-//             blocks = [];
-//           }
-//         }
-
-//         const formattedBlocks = blocks.map((block, blockIdx) => ({
-//           _id: new mongoose.Types.ObjectId(),
-//           index: blockIdx,
-//           blockId: block.id || block.blockId || Date.now() + blockIdx,
-//           name: block.name || `Block ${blockIdx + 1}`,
-//           type: block.type || "Regular",
-//           elementType: block.type || "Regular",
-//           fr: block.fr ?? block.failureRate ?? 0.001,
-//           mtbf: block.mtbf ?? 1000,
-//           ...(block.type === "Regular" && {
-//             partNumber: block.partNumber,
-//             productName: block.productName,
-//             fmecaId: block.fmecaId,
-//             fmDescription: block.fmDescription,
-//             time: block.time,
-//             repair: block.repair,
-//             inspectionPeriod: block.inspectionPeriod,
-//             dutyCycle: block.dutyCycle,
-//             color: block.color,
-//             frDistribution: block.frDistribution,
-//             repairDistribution: block.repairDistribution,
-//             load: block.load,
-//             mct: block.mct,
-//           }),
-//           reliabilityData: block.reliabilityData || null
-//         }));
-
-//         return {
-//           _id: new mongoose.Types.ObjectId(),
-//           index: branchIdx,
-//           name: nestedBranch.name || `Branch ${branchIdx + 1}`,
-//           blocks: formattedBlocks
-//         };
-//       });
-
-//       // Create the new parallel section block to add to the branch's blocks array
-//       const newParallelBlock = {
-//         _id: new mongoose.Types.ObjectId(),
-//         index: targetBranch.blocks?.length || 0,
-//         blockId: req.body.blockId || Date.now(),
-//         name: name || "Parallel Section",
-//         type: "Parallel Section",
-//         elementType: "Parallel Section",
-//         fr: null,
-//         mtbf: null,
-//         arrangement: arrangement || "horizontal",
-//         k: k || 1,
-//         n: n || branches.length,
-//         branches: formattedNestedBranches,
-//         isNested: true,
-//         parentBranchId: targetId,
-//         parentSectionId: parentId,
-//         reliabilityData: {
-//           elementType: "Parallel Section",
-//           isNestedParallel: true,
-//           arrangement: arrangement || "horizontal",
-//           k: k || 1,
-//           n: n || branches.length,
-//           parentBranchId: targetId,
-//           parentSectionId: parentId,
-//           branchCount: branches.length
-//         }
-//       };
-
-//       // Build the update path to reach the target branch's blocks array
-//       let pathString = "branches";
-//       let arrayFilters = [];
-
-//       for (let idx = 0; idx < branchLocation.path.length; idx++) {
-//         const seg = branchLocation.path[idx];
-
-//         if (seg.isParallelBlock) {
-//           // This is a block that contains a nested parallel section
-//           pathString += `.$[branch${idx}].blocks.$[block${idx}].branches`;
-//           arrayFilters.push({ [`branch${idx}._id`]: parentDocument.branches[seg.branchIndex]._id });
-//           arrayFilters.push({ [`block${idx}._id`]: parentDocument.branches[seg.branchIndex].blocks[seg.blockIndex]._id });
-//         } else if (seg.isBranch) {
-//           // This is a branch at the current level
-//           pathString += `.$[branch${idx}]`;
-//           arrayFilters.push({ [`branch${idx}._id`]: parentDocument.branches[seg.branchIndex]._id });
-//         }
-//       }
-
-//       // Add the blocks array path
-//       pathString += `.blocks`;
-
-//       console.log('Path string:', pathString);
-//       console.log('Array filters:', JSON.stringify(arrayFilters, null, 2));
-
-//       // Update the document by pushing the new parallel section to the branch's blocks array
-//       const updatedDocument = await ElementParameterData.findOneAndUpdate(
-//         { "_id": parentId },
-//         {
-//           "$push": {
-//             [pathString]: newParallelBlock
-//           }
-//         },
-//         { arrayFilters, new: true }
-//       );
-
-//       if (updatedDocument) {
-//         // Reindex blocks in the target branch to maintain correct indices
-//         const findUpdatedBranch = (branches) => {
-//           for (const branch of branches) {
-//             if (branch._id.toString() === targetId) {
-//               return branch;
-//             }
-//             if (branch.blocks) {
-//               for (const block of branch.blocks) {
-//                 if ((block.type === 'Parallel Section' || block.elementType === 'Parallel Section') && block.branches) {
-//                   const found = findUpdatedBranch(block.branches);
-//                   if (found) return found;
-//                 }
-//               }
-//             }
-//           }
-//           return null;
-//         };
-
-//         const updatedBranch = findUpdatedBranch(updatedDocument.branches);
-//         if (updatedBranch && updatedBranch.blocks) {
-//           const updateIndexPromises = updatedBranch.blocks.map((block, idx) => {
-//             // Build the path for reindexing
-//             let reindexPathString = "branches";
-//             let reindexArrayFilters = [];
-
-//             for (let idx2 = 0; idx2 < branchLocation.path.length; idx2++) {
-//               const seg = branchLocation.path[idx2];
-//               if (seg.isParallelBlock) {
-//                 reindexPathString += `.$[branch${idx2}].blocks.$[block${idx2}].branches`;
-//                 reindexArrayFilters.push({ [`branch${idx2}._id`]: parentDocument.branches[seg.branchIndex]._id });
-//                 reindexArrayFilters.push({ [`block${idx2}._id`]: parentDocument.branches[seg.branchIndex].blocks[seg.blockIndex]._id });
-//               } else if (seg.isBranch) {
-//                 reindexPathString += `.$[branch${idx2}]`;
-//                 reindexArrayFilters.push({ [`branch${idx2}._id`]: parentDocument.branches[seg.branchIndex]._id });
-//               }
-//             }
-
-//             reindexPathString += `.blocks.${idx}.index`;
-
-//             return ElementParameterData.updateOne(
-//               { "_id": parentId },
-//               { "$set": { [reindexPathString]: idx } },
-//               { arrayFilters: reindexArrayFilters }
-//             );
-//           });
-
-//           await Promise.all(updateIndexPromises);
-//         }
-
-//         const finalDocument = await ElementParameterData.findById(parentId);
-
-//         return res.status(200).json({
-//           success: true,
-//           message: `Parallel section with ${branches.length} branches added as a block to branch ${targetId}`,
-//           data: finalDocument,
-//           newBlock: newParallelBlock,
-//           targetBranchId: targetId
-//         });
-//       } else {
-//         throw new Error("Failed to add parallel section to branch");
-//       }
-//     }
-
-//     // CASE 2: Adding nested parallel section to a branch (using data.idforApi)
-//     if (data?.idforApi) {
-//       const { ItemId, branchId, branchIndex, location } = data.idforApi;
-
-//       const parentDocument = await ElementParameterData.findById(ItemId);
-//       if (!parentDocument) {
-//         return res.status(404).json({
-//           success: false,
-//           message: "Parent parallel section not found"
-//         });
-//       }
-
-//       const targetBranch = parentDocument.branches.find(
-//         b => b._id.toString() === branchId || b.index === branchIndex
-//       );
-
-//       if (!targetBranch) {
-//         return res.status(404).json({
-//           success: false,
-//           message: "Branch not found"
-//         });
-//       }
-
-//       if (!branches || !Array.isArray(branches) || branches.length === 0) {
-//         return res.status(400).json({
-//           success: false,
-//           message: "Branches data is required for nested parallel section"
-//         });
-//       }
-
-//       const formattedNestedBranches = branches.map((nestedBranch, branchIdx) => {
-//         let blocks = nestedBranch.blocks || [];
-//         if (typeof blocks === "string") {
-//           try {
-//             blocks = JSON.parse(blocks);
-//           } catch (err) {
-//             blocks = [];
-//           }
-//         }
-
-//         const formattedBlocks = blocks.map((block, blockIdx) => ({
-//           _id: new mongoose.Types.ObjectId(),
-//           index: blockIdx,
-//           blockId: block.id || block.blockId || Date.now() + blockIdx,
-//           name: block.name || `Block ${blockIdx + 1}`,
-//           type: block.type || "Regular",
-//           elementType: block.type || "Regular",
-//           fr: block.fr ?? block.failureRate ?? 0.001,
-//           mtbf: block.mtbf ?? 1000,
-//           ...(block.type === "Regular" && {
-//             partNumber: block.partNumber,
-//             productName: block.productName,
-//             fmecaId: block.fmecaId,
-//             fmDescription: block.fmDescription,
-//             time: block.time,
-//             repair: block.repair,
-//             inspectionPeriod: block.inspectionPeriod,
-//             dutyCycle: block.dutyCycle,
-//             color: block.color,
-//             frDistribution: block.frDistribution,
-//             repairDistribution: block.repairDistribution,
-//             load: block.load,
-//             mct: block.mct,
-//           }),
-//           reliabilityData: block.reliabilityData || null
-//         }));
-
-//         return {
-//           _id: new mongoose.Types.ObjectId(),
-//           index: branchIdx,
-//           name: nestedBranch.name || `Nested Branch ${branchIdx + 1}`,
-//           blocks: formattedBlocks
-//         };
-//       });
-
-//       const nestedParallelBlock = {
-//         _id: new mongoose.Types.ObjectId(),
-//         index: targetBranch.blocks?.length || 0,
-//         blockId: req.body.blockId || Date.now(),
-//         name: name || "Nested Parallel Section",
-//         type: "Parallel Section",
-//         elementType: "Parallel Section",
-//         fr: null,
-//         mtbf: null,
-//         arrangement: arrangement || "horizontal",
-//         k: k || 1,
-//         n: n || branches.length,
-//         branches: formattedNestedBranches,
-//         isNested: true,
-//         parentBranchId: branchId,
-//         parentSectionId: ItemId,
-//         reliabilityData: {
-//           elementType: "Parallel Section",
-//           isNestedParallel: true,
-//           arrangement: arrangement || "horizontal",
-//           k: k || 1,
-//           n: n || branches.length,
-//           parentBranchId: branchId,
-//           parentSectionId: ItemId,
-//           branchCount: branches.length
-//         }
-//       };
-
-//       let updatedDocument;
-
-//       if (location && location.includes('left')) {
-//         updatedDocument = await ElementParameterData.findOneAndUpdate(
-//           { "_id": ItemId, "branches._id": branchId },
-//           {
-//             "$push": {
-//               "branches.$.blocks": {
-//                 "$each": [nestedParallelBlock],
-//                 "$position": 0
-//               }
-//             }
-//           },
-//           { new: true }
-//         );
-//       } else {
-//         const nextIndex = targetBranch.blocks?.length > 0
-//           ? Math.max(...targetBranch.blocks.map(b => b.index || 0)) + 1
-//           : 0;
-//         nestedParallelBlock.index = nextIndex;
-//         updatedDocument = await ElementParameterData.findOneAndUpdate(
-//           { "_id": ItemId, "branches._id": branchId },
-//           { "$push": { "branches.$.blocks": nestedParallelBlock } },
-//           { new: true }
-//         );
-//       }
-
-//       if (updatedDocument) {
-//         return res.status(200).json({
-//           success: true,
-//           message: `Nested parallel section added to branch`,
-//           data: updatedDocument,
-//           newBlock: nestedParallelBlock
-//         });
-//       }
-//     }
-
-//     // CASE 3: Create a new top-level parallel section
-//     if (!branches || !Array.isArray(branches) || branches.length === 0) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Branches data is required for new parallel section"
-//       });
-//     }
-
-//     const formattedBranches = branches.map((branch, branchIdx) => {
-//       let blocks = branch.blocks || [];
-//       if (typeof blocks === "string") {
-//         try {
-//           blocks = JSON.parse(blocks);
-//         } catch (err) {
-//           blocks = [];
-//         }
-//       }
-
-//       const formattedBlocks = blocks.map((block, blockIdx) => ({
-//         _id: new mongoose.Types.ObjectId(),
-//         index: blockIdx,
-//         blockId: block.id || block.blockId || Date.now() + blockIdx,
-//         name: block.name || `Block ${blockIdx + 1}`,
-//         type: block.type || "Regular",
-//         elementType: block.type || "Regular",
-//         fr: block.fr ?? block.failureRate ?? 0.001,
-//         mtbf: block.mtbf ?? 1000,
-//         ...(block.type === "Regular" && {
-//           partNumber: block.partNumber,
-//           productName: block.productName,
-//           fmecaId: block.fmecaId,
-//           fmDescription: block.fmDescription,
-//           time: block.time,
-//           repair: block.repair,
-//           inspectionPeriod: block.inspectionPeriod,
-//           dutyCycle: block.dutyCycle,
-//           color: block.color,
-//           frDistribution: block.frDistribution,
-//           repairDistribution: block.repairDistribution,
-//           load: block.load,
-//           mct: block.mct,
-//         }),
-//         reliabilityData: block.reliabilityData || null
-//       }));
-
-//       return {
-//         _id: new mongoose.Types.ObjectId(),
-//         index: branchIdx,
-//         name: branch.name || `Branch ${branchIdx + 1}`,
-//         blocks: formattedBlocks
-//       };
-//     });
-
-//     const parallelSection = await ElementParameterData.create({
-//       rbdId,
-//       projectId,
-//       companyId,
-//       productId,
-//       name: name || "Parallel Section",
-//       type: "Parallel Section",
-//       elementType: "Parallel Section",
-//       arrangement: arrangement || "horizontal",
-//       k: k || 1,
-//       n: n || branches.length,
-//       branches: formattedBranches,
-//       isParallel: true
-//     });
-
-//     res.status(201).json({
-//       success: true,
-//       message: `Parallel Section created successfully with ${branches.length} branches`,
-//       data: parallelSection
-//     });
-
-//   } catch (error) {
-//     console.error("Parallel Section Error:", error);
-//     res.status(500).json({
-//       success: false,
-//       message: "Error creating/updating Parallel Section",
-//       error: error.message
-//     });
-//   }
-// };
-
-
-// only working for nested parallel
-// export const createParallelSection = async (req, res) => {
-//   const { rbdId, projectId } = req.params;
-
-//   try {
-//     const {
-//       companyId,
-//       productId,
-//       name,
-//       arrangement,
-//       k,
-//       n,
-//       branches,
-//       data,
-//       isNested,
-//       parentId,
-//       targetId,
-//     } = req.body;
-
-//     console.log(req.body, 'req.body')
-
-//     if (parentId && targetId) {
-//       const parentDocument = await ElementParameterData.findById(parentId);
-//       if (!parentDocument) {
-//         return res.status(404).json({ success: false, message: "Parent document not found" });
-//       }
-
-//       // First try: find a branch whose _id matches targetId directly
-//       const findBranchById = (branches, targetBranchId, path = []) => {
-//         for (let i = 0; i < branches.length; i++) {
-//           const branch = branches[i];
-
-//           if (branch._id.toString() === targetBranchId) {
-//             return { found: true, containingBranch: branch, path };
-//           }
-
-//           // Go deeper into nested parallel sections
-//           if (branch.blocks) {
-//             for (let j = 0; j < branch.blocks.length; j++) {
-//               const block = branch.blocks[j];
-//               if (
-//                 (block.type === "Parallel Section" || block.elementType === "Parallel Section") &&
-//                 block.branches?.length > 0
-//               ) {
-//                 const result = findBranchById(
-//                   block.branches,
-//                   targetBranchId,
-//                   [...path, { branchIndex: i, blockIndex: j }]
-//                 );
-//                 if (result.found) return result;
-//               }
-//             }
-//           }
-//         }
-//         return { found: false };
-//       };
-
-//       // Second try: find a branch that CONTAINS a block with targetId (sibling insert)
-//       const findBranchContainingBlock = (branches, targetBlockId, path = []) => {
-//         for (let i = 0; i < branches.length; i++) {
-//           const branch = branches[i];
-
-//           if (branch.blocks && branch.blocks.length > 0) {
-//             const blockExists = branch.blocks.some(
-//               block => block._id.toString() === targetBlockId
-//             );
-//             if (blockExists) {
-//               return { found: true, containingBranch: branch, path };
-//             }
-
-//             for (let j = 0; j < branch.blocks.length; j++) {
-//               const block = branch.blocks[j];
-//               if (
-//                 (block.type === "Parallel Section" || block.elementType === "Parallel Section") &&
-//                 block.branches?.length > 0
-//               ) {
-//                 const result = findBranchContainingBlock(
-//                   block.branches,
-//                   targetBlockId,
-//                   [...path, { branchIndex: i, blockIndex: j }]
-//                 );
-//                 if (result.found) return result;
-//               }
-//             }
-//           }
-//         }
-//         return { found: false };
-//       };
-
-//       // Try branch _id match first, then block _id match
-//       let result = findBranchById(parentDocument.branches, targetId);
-//       if (!result.found) {
-//         result = findBranchContainingBlock(parentDocument.branches, targetId);
-//       }
-
-//       if (!result.found) {
-//         return res.status(404).json({
-//           success: false,
-//           message: `No branch found for targetId: ${targetId}`
-//         });
-//       }
-
-//       const { containingBranch, path } = result;
-//       console.log('Found containing branch:', containingBranch._id);
-//       console.log('Path:', JSON.stringify(path));
-
-//       // Validate branches
-//       if (!branches || !Array.isArray(branches) || branches.length === 0) {
-//         return res.status(400).json({
-//           success: false,
-//           message: "Branches data is required for parallel section"
-//         });
-//       }
-
-//       // Format nested branches
-//       const formattedNestedBranches = branches.map((nestedBranch, branchIdx) => {
-//         let blocks = nestedBranch.blocks || [];
-//         if (typeof blocks === "string") {
-//           try { blocks = JSON.parse(blocks); } catch { blocks = []; }
-//         }
-
-//         const formattedBlocks = blocks.map((block, blockIdx) => ({
-//           _id: new mongoose.Types.ObjectId(),
-//           index: blockIdx,
-//           blockId: block.id || block.blockId || Date.now() + blockIdx,
-//           name: block.name || `Block ${blockIdx + 1}`,
-//           type: block.type || "Regular",
-//           elementType: block.type || "Regular",
-//           fr: block.fr ?? block.failureRate ?? 0.001,
-//           mtbf: block.mtbf ?? 1000,
-//           ...(block.type === "Regular" && {
-//             partNumber: block.partNumber,
-//             productName: block.productName,
-//             fmecaId: block.fmecaId,
-//             fmDescription: block.fmDescription,
-//             time: block.time,
-//             repair: block.repair,
-//             inspectionPeriod: block.inspectionPeriod,
-//             dutyCycle: block.dutyCycle,
-//             color: block.color,
-//             frDistribution: block.frDistribution,
-//             repairDistribution: block.repairDistribution,
-//             load: block.load,
-//             mct: block.mct,
-//           }),
-//           reliabilityData: block.reliabilityData || null
-//         }));
-
-//         return {
-//           _id: new mongoose.Types.ObjectId(),
-//           index: branchIdx,
-//           name: nestedBranch.name || `Branch ${branchIdx + 1}`,
-//           blocks: formattedBlocks
-//         };
-//       });
-
-//       const newParallelBlock = {
-//         _id: new mongoose.Types.ObjectId(),
-//         index: containingBranch.blocks.length,
-//         blockId: req.body.blockId || Date.now(),
-//         name: name || "Parallel Section",
-//         type: "Parallel Section",
-//         elementType: "Parallel Section",
-//         fr: null,
-//         mtbf: null,
-//         arrangement: arrangement || "horizontal",
-//         k: k || 1,
-//         n: n || branches.length,
-//         branches: formattedNestedBranches,
-//         isNested: true,
-//         parentBranchId: containingBranch._id,
-//         parentSectionId: parentId,
-//         reliabilityData: {
-//           elementType: "Parallel Section",
-//           isNestedParallel: true,
-//           arrangement: arrangement || "horizontal",
-//           k: k || 1,
-//           n: n || branches.length,
-//           parentBranchId: containingBranch._id,
-//           parentSectionId: parentId,
-//           branchCount: branches.length
-//         }
-//       };
-
-//       // Build MongoDB update path
-//       let pathString = "branches";
-//       let arrayFilters = [];
-//       let currentBranches = parentDocument.branches;
-
-//       for (let idx = 0; idx < path.length; idx++) {
-//         const seg = path[idx];
-//         const actualBranch = currentBranches[seg.branchIndex];
-//         const actualBlock = actualBranch.blocks[seg.blockIndex];
-
-//         pathString += `.$[branch${idx}].blocks.$[block${idx}].branches`;
-//         arrayFilters.push({ [`branch${idx}._id`]: new mongoose.Types.ObjectId(actualBranch._id) });
-//         arrayFilters.push({ [`block${idx}._id`]: new mongoose.Types.ObjectId(actualBlock._id) });
-
-//         currentBranches = actualBlock.branches;
-//       }
-
-//       pathString += `.$[targetBranch].blocks`;
-//       arrayFilters.push({ "targetBranch._id": new mongoose.Types.ObjectId(containingBranch._id) });
-
-//       console.log('Final path:', pathString);
-//       console.log('Array filters:', JSON.stringify(arrayFilters, null, 2));
-
-//       const updatedDocument = await ElementParameterData.findOneAndUpdate(
-//         { "_id": parentId },
-//         { "$push": { [pathString]: newParallelBlock } },
-//         { arrayFilters, new: true }
-//       );
-
-//       if (!updatedDocument) throw new Error("Failed to add parallel section");
-
-//       // Reindex blocks
-//       const findUpdatedBranch = (branches) => {
-//         for (const branch of branches) {
-//           if (branch._id.toString() === containingBranch._id.toString()) return branch;
-//           if (branch.blocks) {
-//             for (const block of branch.blocks) {
-//               if (
-//                 (block.type === "Parallel Section" || block.elementType === "Parallel Section") &&
-//                 block.branches
-//               ) {
-//                 const found = findUpdatedBranch(block.branches);
-//                 if (found) return found;
-//               }
-//             }
-//           }
-//         }
-//         return null;
-//       };
-
-//       const updatedBranch = findUpdatedBranch(updatedDocument.branches);
-
-//       if (updatedBranch?.blocks) {
-//         let reindexBasePath = "branches";
-//         let reindexBaseFilters = [];
-//         let reindexCurrentBranches = parentDocument.branches;
-
-//         for (let idx = 0; idx < path.length; idx++) {
-//           const seg = path[idx];
-//           const actualBranch = reindexCurrentBranches[seg.branchIndex];
-//           const actualBlock = actualBranch.blocks[seg.blockIndex];
-
-//           reindexBasePath += `.$[branch${idx}].blocks.$[block${idx}].branches`;
-//           reindexBaseFilters.push({ [`branch${idx}._id`]: new mongoose.Types.ObjectId(actualBranch._id) });
-//           reindexBaseFilters.push({ [`block${idx}._id`]: new mongoose.Types.ObjectId(actualBlock._id) });
-
-//           reindexCurrentBranches = actualBlock.branches;
-//         }
-
-//         await Promise.all(updatedBranch.blocks.map((block, idx) => {
-//           return ElementParameterData.updateOne(
-//             { "_id": parentId },
-//             { "$set": { [reindexBasePath + `.$[targetBranch].blocks.${idx}.index`]: idx } },
-//             { arrayFilters: [...reindexBaseFilters, { "targetBranch._id": new mongoose.Types.ObjectId(containingBranch._id) }] }
-//           );
-//         }));
-//       }
-
-//       const finalDocument = await ElementParameterData.findById(parentId);
-
-//       return res.status(200).json({
-//         success: true,
-//         message: `Parallel section added to branch ${containingBranch._id}`,
-//         data: finalDocument,
-//         newBlock: newParallelBlock,
-//         containingBranchId: containingBranch._id,
-//         targetId
-//       });
-//     }
-
-//     // ... rest of your existing code for other cases ...
-
-//   } catch (error) {
-//     console.error("Parallel Section Error:", error);
-//     res.status(500).json({
-//       success: false,
-//       message: "Error creating/updating Parallel Section",
-//       error: error.message
-//     });
-//   }
-// };
-
-
-// working both parallel
-
 
 export const createParallelSection = async (req, res) => {
   const { rbdId, projectId } = req.params;
@@ -2295,7 +1047,7 @@ export const createParallelSection = async (req, res) => {
       targetId,
     } = req.body;
 
-    console.log(req.body, 'req.body');
+  
 
     // ── NESTED: add parallel section inside an existing branch ──────────────
     if (parentId && targetId) {
@@ -2372,8 +1124,7 @@ export const createParallelSection = async (req, res) => {
       }
 
       const { containingBranch, path } = result;
-      console.log('Found containing branch:', containingBranch._id);
-      console.log('Path:', JSON.stringify(path));
+    
 
       if (!branches || !Array.isArray(branches) || branches.length === 0) {
         return res.status(400).json({
@@ -2407,6 +1158,9 @@ export const createParallelSection = async (req, res) => {
               fmDescription: block.fmDescription,
               time: block.time,
               repair: block.repair,
+              mttr: block.mttr,
+              reliability: block.reliability,
+              unavailability: block.unavailability,
               inspectionPeriod: block.inspectionPeriod,
               dutyCycle: block.dutyCycle,
               color: block.color,
@@ -2473,8 +1227,7 @@ export const createParallelSection = async (req, res) => {
       pathString += `.$[targetBranch].blocks`;
       arrayFilters.push({ "targetBranch._id": new mongoose.Types.ObjectId(containingBranch._id) });
 
-      console.log('Final path:', pathString);
-      console.log('Array filters:', JSON.stringify(arrayFilters, null, 2));
+    
 
       const updatedDocument = await ElementParameterData.findOneAndUpdate(
         { "_id": parentId },
@@ -2575,6 +1328,9 @@ export const createParallelSection = async (req, res) => {
             fmDescription: block.fmDescription,
             time: block.time,
             repair: block.repair,
+            mttr: block.mttr,
+            reliability: block.reliability,
+            unavailability: block.unavailability,
             inspectionPeriod: block.inspectionPeriod,
             dutyCycle: block.dutyCycle,
             color: block.color,
@@ -2629,7 +1385,7 @@ export const createParallelSection = async (req, res) => {
 
 export const deleteelementParameters = async (req, res) => {
   const { id } = req.params
-  console.log(id, 'id to delete')
+
   const deleteBlock = await ElementParameterData.findByIdAndDelete(id)
 
   if (!deleteBlock) {
@@ -2648,8 +1404,7 @@ export const deleteNestedBlock = async (req, res) => {
   try {
     const { parentId, blockId } = req.params;
 
-    console.log('Parent ID:', parentId);
-    console.log('Block ID to delete:', blockId);
+   
 
     // Find the parent parallel section
     const parentSection = await ElementParameterData.findById(parentId);
@@ -2827,6 +1582,10 @@ export const deleteNestedBlock = async (req, res) => {
           repairDistribution: blockToConvert.repairDistribution || modifiedSection.repairDistribution || 'Exponential',
           load: blockToConvert.load || modifiedSection.load || 100,
           mct: blockToConvert.mct || modifiedSection.mct || 0,
+          mttr: blockToConvert.mttr || modifiedSection.mttr || 0,
+
+          reliability: blockToConvert.reliability || modifiedSection.reliability || 0,
+          unavailability: blockToConvert.unavailability || modifiedSection.unavailability || 0,
           name: blockToConvert.name || modifiedSection.name || 'Regular Block',
           elementType: 'Regular',
           type: 'Regular',
