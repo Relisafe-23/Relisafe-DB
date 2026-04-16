@@ -21,7 +21,7 @@ const blockSchema = new Schema({
   elementType: String, // Regular | K-out-of-N | SubRBD | Parallel Section
 
   // Reliability parameters
-  mtbf: Number,
+
   fr: Number,
   time: Number,
 
@@ -57,6 +57,7 @@ const blockSchema = new Schema({
   fmecaId: Number,
   fmDescription: String,
   repair: String,
+    mtbf: Number,
   inspectionPeriod: String,
   dutyCycle: Number,
   color: String,
@@ -64,7 +65,7 @@ const blockSchema = new Schema({
   repairDistribution: String,
   load: Number,
   mct: Number,
-
+ 
   // References
   rbdId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -144,7 +145,7 @@ const elementParameterSchema = new Schema(
 
     // Reliability parameters
     fr: Number,
-    mtbf: Number,
+  
     time: Number,
 
     // K-of-N parameters
@@ -166,9 +167,11 @@ const elementParameterSchema = new Schema(
     frDistribution: String,
     repairDistribution: String,
     load: Number,
+    mtbf: Number,
     mct: Number,
     mttr:Number,
-    // Parallel section branches
+    reliability: Number,
+   unavailability: Number,
     branches: [branchSchema],
 
   },

@@ -254,9 +254,7 @@ export const createElementParameter = async (req, res) => {
     if (idforApi) {
       const { ItemId, branchId, branchIndex, location, nested } = idforApi;
 
-      console.log('Branch ID:', branchId);
-      console.log('Is nested:', nested);
-      console.log('Location:', location);
+      
 
       // First, get the current document
       const parentDocument = await ElementParameterData.findById(ItemId);
@@ -335,7 +333,7 @@ export const createElementParameter = async (req, res) => {
         type: data.blockType || data.type || "Regular",
         elementType: data.elementType || data.type || "Regular",
         fr: data.fr || 0.001,
-        mtbf: data.mtbf || (data.fr ? 1000 / data.fr : 1000),
+        mtbf: data.mtbf ,
         time: data.time,
         repair: data.repair,
         inspectionPeriod: data.inspectionPeriod,
@@ -345,7 +343,9 @@ export const createElementParameter = async (req, res) => {
         repairDistribution: data.repairDistribution,
         load: data.load,
         mct: data.mct,
-        mttr:data.mttr,
+        mttr: data.mttr,
+        reliability: data.reliability,
+        unavailability: data.unavailability,
         partNumber: data.partNumber,
         productName: data.productName,
         fmecaId: data.fmecaId,
@@ -372,7 +372,7 @@ export const createElementParameter = async (req, res) => {
       };
 
       let updatedRBD;
-
+  console.log("newBlock",newBlock)
       // If branch is nested (inside a parallel section block)
       if (parentPath.length > 0) {
         console.log('Updating nested branch');
@@ -490,6 +490,10 @@ export const createElementParameter = async (req, res) => {
       elementType: data.elementType,
       time: data.time,
       repair: data.repair,
+      mtbf:data.mtbf,
+      mttr: data.mttr,
+      reliability: data.reliability,
+      unavailability: data.unavailability,
       inspectionPeriod: data.inspectionPeriod,
       dutyCycle: data.dutyCycle,
       color: data.color,
@@ -552,7 +556,7 @@ export const updateelementParameters = async (req, res) => {
       id,
       data,
       { new: true }
-      
+
     );
 
     if (!elementParameters) {
@@ -651,9 +655,7 @@ export const getElementParameterById = async (req, res) => {
   const { rbdId, projectId } = req.params
   const data = req.body;
 
-  console.log(data, 'data')
-  console.log(rbdId, 'rbdId')
-  console.log(projectId, 'projectId')
+  
 
   try {
     const elementParameter = await ElementParameterData.find({ projectId, rbdId });
@@ -663,6 +665,7 @@ export const getElementParameterById = async (req, res) => {
         message: "Element Parameter not found",
       });
     }
+    console.log("elementParameters12334567",elementParameter[29]);
     res.status(200).json({
       success: true,
       data: elementParameter,
@@ -693,7 +696,7 @@ export const createParallelSection = async (req, res) => {
       targetId,
     } = req.body;
 
-    console.log(req.body, 'req.body');
+  
 
     // ── NESTED: add parallel section inside an existing branch ──────────────
     if (parentId && targetId) {
@@ -770,8 +773,7 @@ export const createParallelSection = async (req, res) => {
       }
 
       const { containingBranch, path } = result;
-      console.log('Found containing branch:', containingBranch._id);
-      console.log('Path:', JSON.stringify(path));
+    
 
       if (!branches || !Array.isArray(branches) || branches.length === 0) {
         return res.status(400).json({
@@ -805,6 +807,9 @@ export const createParallelSection = async (req, res) => {
               fmDescription: block.fmDescription,
               time: block.time,
               repair: block.repair,
+              mttr: block.mttr,
+              reliability: block.reliability,
+              unavailability: block.unavailability,
               inspectionPeriod: block.inspectionPeriod,
               dutyCycle: block.dutyCycle,
               color: block.color,
@@ -871,8 +876,7 @@ export const createParallelSection = async (req, res) => {
       pathString += `.$[targetBranch].blocks`;
       arrayFilters.push({ "targetBranch._id": new mongoose.Types.ObjectId(containingBranch._id) });
 
-      console.log('Final path:', pathString);
-      console.log('Array filters:', JSON.stringify(arrayFilters, null, 2));
+    
 
       const updatedDocument = await ElementParameterData.findOneAndUpdate(
         { "_id": parentId },
@@ -973,6 +977,9 @@ export const createParallelSection = async (req, res) => {
             fmDescription: block.fmDescription,
             time: block.time,
             repair: block.repair,
+            mttr: block.mttr,
+            reliability: block.reliability,
+            unavailability: block.unavailability,
             inspectionPeriod: block.inspectionPeriod,
             dutyCycle: block.dutyCycle,
             color: block.color,
@@ -1027,7 +1034,7 @@ export const createParallelSection = async (req, res) => {
 
 export const deleteelementParameters = async (req, res) => {
   const { id } = req.params
-  console.log(id, 'id to delete')
+
   const deleteBlock = await ElementParameterData.findByIdAndDelete(id)
 
   if (!deleteBlock) {
@@ -1046,8 +1053,7 @@ export const deleteNestedBlock = async (req, res) => {
   try {
     const { parentId, blockId } = req.params;
 
-    console.log('Parent ID:', parentId);
-    console.log('Block ID to delete:', blockId);
+   
 
     // Find the parent parallel section
     const parentSection = await ElementParameterData.findById(parentId);
@@ -1225,7 +1231,10 @@ export const deleteNestedBlock = async (req, res) => {
           repairDistribution: blockToConvert.repairDistribution || modifiedSection.repairDistribution || 'Exponential',
           load: blockToConvert.load || modifiedSection.load || 100,
           mct: blockToConvert.mct || modifiedSection.mct || 0,
-          mttr:blockToConvert.mttr||parentSection.mttr||0,
+          mttr: blockToConvert.mttr || modifiedSection.mttr || 0,
+
+          reliability: blockToConvert.reliability || modifiedSection.reliability || 0,
+          unavailability: blockToConvert.unavailability || modifiedSection.unavailability || 0,
           name: blockToConvert.name || modifiedSection.name || 'Regular Block',
           elementType: 'Regular',
           type: 'Regular',
@@ -1233,7 +1242,7 @@ export const deleteNestedBlock = async (req, res) => {
           projectId: modifiedSection.projectId,
           companyId: modifiedSection.companyId
         };
-       console.log("regularBlockData...",regularBlockData)
+        
         // Delete the old parallel section
         await ElementParameterData.findByIdAndDelete(parentId);
 
