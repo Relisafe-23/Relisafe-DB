@@ -2711,7 +2711,7 @@ export const deleteNestedBlock = async (req, res) => {
           projectId: modifiedSection.projectId,
           companyId: modifiedSection.companyId
         };
-
+       console.log("regularBlockData...",regularBlockData)
         // Delete the old parallel section
         await ElementParameterData.findByIdAndDelete(parentId);
 
