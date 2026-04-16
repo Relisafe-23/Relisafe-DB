@@ -533,6 +533,8 @@ export const createElementParameter = async (req, res) => {
       frDistribution: data.frDistribution,
       k: data.k,
       n: data.n,
+    reliability: data.reliability,
+   unavailability: data.unavailability,
       repairDistribution: data.repairDistribution,
       load: data.load,
       mct: data.mct,
