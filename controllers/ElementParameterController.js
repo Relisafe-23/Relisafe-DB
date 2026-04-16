@@ -241,50 +241,38 @@ import mongoose from "mongoose";
 // };
 
 export const createElementParameter = async (req, res) => {
-  console.log('calling element parameter');
-  console.log(req.body);
+  console.log(req.body, ": req.body");
 
   try {
     const data = req.body;
     const idforApi = data?.idforApi;
-
+    const targetId = data?.targetId;
     console.log(idforApi, ": idforApi");
+    console.log(targetId, ": targetId");
 
-    // If idforApi exists, push a new block to the branch
+    // ─── CASE 1: idforApi exists — insert into branch by ItemId ──────────────
     if (idforApi) {
+      console.log('itemId idfor api');
       const { ItemId, branchId, branchIndex, location, nested } = idforApi;
 
-      console.log('Branch ID:', branchId);
-      console.log('Is nested:', nested);
-      console.log('Location:', location);
-
-      // First, get the current document
       const parentDocument = await ElementParameterData.findById(ItemId);
-
       if (!parentDocument) {
-        return res.status(404).json({
-          success: false,
-          message: "Parent document not found"
-        });
+        return res.status(404).json({ success: false, message: "Parent document not found" });
       }
 
-      // Function to find a branch recursively in nested parallel sections
       const findBranchRecursively = (branches, targetBranchId) => {
         for (let i = 0; i < branches.length; i++) {
           const branch = branches[i];
-
-          // Check if this branch matches
           if (branch._id.toString() === targetBranchId) {
             return { branch, parentPath: [], branchIndex: i };
           }
-
-          // Check if any block in this branch contains nested parallel sections
           if (branch.blocks && branch.blocks.length > 0) {
             for (let j = 0; j < branch.blocks.length; j++) {
               const block = branch.blocks[j];
-              if ((block.type === 'Parallel Section' || block.elementType === 'Parallel Section') &&
-                block.branches && block.branches.length > 0) {
-                // Recursively search in nested parallel section
+              if (
+                (block.type === 'Parallel Section' || block.elementType === 'Parallel Section') &&
+                block.branches?.length > 0
+              ) {
                 const result = findBranchRecursively(block.branches, targetBranchId);
                 if (result) {
                   return {
@@ -303,11 +291,9 @@ export const createElementParameter = async (req, res) => {
       let targetBranch = null;
       let parentPath = [];
 
-      // First check top-level branches
       targetBranch = parentDocument.branches.find(b => b._id.toString() === branchId);
 
       if (!targetBranch && nested) {
-        // Search in nested parallel sections
         const result = findBranchRecursively(parentDocument.branches, branchId);
         if (result) {
           targetBranch = result.branch;
@@ -318,18 +304,26 @@ export const createElementParameter = async (req, res) => {
       }
 
       if (!targetBranch) {
-        return res.status(404).json({
-          success: false,
-          message: `Branch not found with id: ${branchId}`
-        });
+        return res.status(404).json({ success: false, message: `Branch not found with id: ${branchId}` });
       }
 
       const currentBlocks = targetBranch.blocks || [];
 
-      // Create new block object
+      // Determine insert position
+      let insertPosition = null;
+      if (targetId) {
+        const targetIndex = currentBlocks.findIndex(b => b._id.toString() === targetId.toString());
+        if (targetIndex !== -1) {
+          insertPosition = targetIndex + 1;
+        }
+      }
+      if (location && location.includes('left')) {
+        insertPosition = 0;
+      }
+
       const newBlock = {
         _id: new mongoose.Types.ObjectId(),
-        index: currentBlocks.length,
+        index: insertPosition !== null ? insertPosition : currentBlocks.length,
         blockId: data.blockId || Date.now(),
         name: data.productName || data.blockType || "New Block",
         type: data.blockType || data.type || "Regular",
@@ -372,15 +366,12 @@ export const createElementParameter = async (req, res) => {
 
       let updatedRBD;
 
-      // If branch is nested (inside a parallel section block)
       if (parentPath.length > 0) {
+        // Nested branch
         console.log('Updating nested branch');
-
-        // Build the update path through nested structures
         let pathString = "branches";
         let arrayFilters = [];
 
-        // Build the path for each level of nesting
         for (let idx = 0; idx < parentPath.length; idx++) {
           const seg = parentPath[idx];
           pathString += `.$[branch${idx}].blocks.$[block${idx}].branches`;
@@ -388,78 +379,53 @@ export const createElementParameter = async (req, res) => {
           arrayFilters.push({ [`block${idx}._id`]: seg.blockId });
         }
 
-        // Add the target branch
         pathString += `.$[targetBranch].blocks`;
-        arrayFilters.push({ [`targetBranch._id`]: branchId });
+        arrayFilters.push({ "targetBranch._id": branchId });
 
-        if (location && location.includes('left')) {
-          updatedRBD = await ElementParameterData.findOneAndUpdate(
-            { "_id": ItemId },
-            {
-              "$push": {
-                [pathString]: {
-                  "$each": [newBlock],
-                  "$position": 0
-                }
+        updatedRBD = await ElementParameterData.findOneAndUpdate(
+          { "_id": ItemId },
+          {
+            "$push": {
+              [pathString]: {
+                "$each": [newBlock],
+                ...(insertPosition !== null ? { "$position": insertPosition } : {})
               }
-            },
-            { arrayFilters, new: true }
-          );
-        } else {
-          updatedRBD = await ElementParameterData.findOneAndUpdate(
-            { "_id": ItemId },
-            {
-              "$push": {
-                [pathString]: newBlock
-              }
-            },
-            { arrayFilters, new: true }
-          );
-        }
+            }
+          },
+          { arrayFilters, new: true }
+        );
+
       } else {
-        // Top-level branch - use simple update
+        // Top-level branch
         console.log('Updating top-level branch');
 
-        if (location && location.includes('left')) {
-          updatedRBD = await ElementParameterData.findOneAndUpdate(
-            { "_id": ItemId, "branches._id": branchId },
-            {
-              "$push": {
-                "branches.$.blocks": {
-                  "$each": [newBlock],
-                  "$position": 0
-                }
+        updatedRBD = await ElementParameterData.findOneAndUpdate(
+          { "_id": ItemId, "branches._id": branchId },
+          {
+            "$push": {
+              "branches.$.blocks": {
+                "$each": [newBlock],
+                ...(insertPosition !== null ? { "$position": insertPosition } : {})
               }
-            },
-            { new: true }
-          );
-
-          // Reindex blocks after left insertion
-          if (updatedRBD) {
-            const updatedBranch = updatedRBD.branches.find(b => b._id.toString() === branchId);
-            if (updatedBranch) {
-              const updateIndexPromises = updatedBranch.blocks.map((block, idx) => {
-                return ElementParameterData.updateOne(
-                  { "_id": ItemId, "branches._id": branchId, "branches.blocks._id": block._id },
-                  { "$set": { "branches.$[branch].blocks.$[block].index": idx } },
-                  { "arrayFilters": [{ "branch._id": branchId }, { "block._id": block._id }] }
-                );
-              });
-              await Promise.all(updateIndexPromises);
-              updatedRBD = await ElementParameterData.findById(ItemId);
             }
-          }
-        } else {
-          const nextBlockIndex = currentBlocks.length > 0
-            ? Math.max(...currentBlocks.map(b => b.index || 0)) + 1
-            : 0;
-          newBlock.index = nextBlockIndex;
+          },
+          { new: true }
+        );
 
-          updatedRBD = await ElementParameterData.findOneAndUpdate(
-            { "_id": ItemId, "branches._id": branchId },
-            { "$push": { "branches.$.blocks": newBlock } },
-            { new: true }
-          );
+        // Reindex after any positional insertion
+        if (updatedRBD && insertPosition !== null) {
+          const updatedBranch = updatedRBD.branches.find(b => b._id.toString() === branchId);
+          if (updatedBranch) {
+            const updateIndexPromises = updatedBranch.blocks.map((block, idx) =>
+              ElementParameterData.updateOne(
+                { "_id": ItemId, "branches._id": branchId, "branches.blocks._id": block._id },
+                { "$set": { "branches.$[branch].blocks.$[block].index": idx } },
+                { "arrayFilters": [{ "branch._id": branchId }, { "block._id": block._id }] }
+              )
+            );
+            await Promise.all(updateIndexPromises);
+            updatedRBD = await ElementParameterData.findById(ItemId);
+          }
         }
       }
 
@@ -468,44 +434,281 @@ export const createElementParameter = async (req, res) => {
           success: true,
           message: "New block added successfully",
           data: updatedRBD,
-          newBlock: newBlock
+          newBlock
         });
       } else {
         throw new Error("Failed to add block to branch");
       }
     }
 
-    // If no idforApi, create separate ElementParameterData
-    const elementParameters = await ElementParameterData.create({
-      indexCount: data.indexCount,
-      partNumber: data.partNumber,
-      productName: data.productName,
-      rbdId: data.rbdId,
-      fr: data.fr,
-      blockId: data.blockId,
-      productId: data.productId,
-      fmecaId: data.fmecaId,
-      fmDescription: data.fmDescription,
-      elementType: data.elementType,
-      time: data.time,
-      repair: data.repair,
-      inspectionPeriod: data.inspectionPeriod,
-      dutyCycle: data.dutyCycle,
-      color: data.color,
-      frDistribution: data.frDistribution,
-      k: data.k,
-      n: data.n,
-      repairDistribution: data.repairDistribution,
-      load: data.load,
-      mct: data.mct,
-      projectId: data.projectId,
-      companyId: data.companyId,
-      type: data.blockType || data.type || "Regular",
-    });
+    // ─── CASE 2: targetId exists, no idforApi — find branch by rbdId ─────────
+    // if (targetId && !idforApi) {
+    //   const parentDocument = await ElementParameterData.find({ rbdId: data.rbdId });
 
-    res.status(201).json({
+    //   console.log(parentDocument, 'parentDocument');
+
+
+    //   if (!parentDocument) {
+    //     return res.status(404).json({ success: false, message: "Parent document not found by rbdId" });
+    //   }
+
+    //   const findBranchContainingBlock = (nodes, targetId) => {
+
+    //     console.log(nodes, 'nodes')
+
+    //     const newBlock = {
+    //       _id: new mongoose.Types.ObjectId(),
+    //       index: insertPosition,
+    //       blockId: data.blockId || Date.now(),
+    //       name: data.productName || data.blockType || "New Block",
+    //       type: data.blockType || data.type || "Regular",
+    //       elementType: data.elementType || data.type || "Regular",
+    //       fr: data.fr || 0.001,
+    //       mtbf: data.mtbf || (data.fr ? 1000 / data.fr : 1000),
+    //       time: data.time,
+    //       repair: data.repair,
+    //       inspectionPeriod: data.inspectionPeriod,
+    //       dutyCycle: data.dutyCycle,
+    //       color: data.color,
+    //       frDistribution: data.frDistribution,
+    //       repairDistribution: data.repairDistribution,
+    //       load: data.load,
+    //       mct: data.mct,
+    //       partNumber: data.partNumber,
+    //       productName: data.productName,
+    //       fmecaId: data.fmecaId,
+    //       fmDescription: data.fmDescription,
+    //       reliabilityData: {
+    //         partNumber: data.partNumber,
+    //         productId: data.productId,
+    //         fmecaId: data.fmecaId,
+    //         fmDescription: data.fmDescription,
+    //         time: data.time,
+    //         repair: data.repair,
+    //         inspectionPeriod: data.inspectionPeriod,
+    //         dutyCycle: data.dutyCycle,
+    //         color: data.color,
+    //         frDistribution: data.frDistribution,
+    //         repairDistribution: data.repairDistribution,
+    //         load: data.load,
+    //         mct: data.mct,
+    //         elementType: data.elementType,
+    //         indexCount: data.indexCount,
+    //         k: data.k,
+    //         n: data.n
+    //       }
+    //     };
+
+    //     for (let i = 0; i < nodes.length; i++) {
+    //       const node = nodes[i];
+
+    //       if (node._id.toString() === targetId.toString()) {
+    //         const newBlock = {
+    //           _id: new mongoose.Types.ObjectId(),
+    //           ...newBlock,
+    //         };
+
+    //         nodes.splice(i + 1, 0, newBlock);
+
+    //         nodes.forEach((n, idx) => {
+    //           n.index = idx;
+    //         });
+
+    //         return true;
+    //       }
+
+    //     }
+    //     return null;
+    //   };
+
+    //   const found = findBranchContainingBlock(parentDocument, targetId);
+
+    //   console.log(found, 'found');
+
+    //   if (!found) {
+    //     return res.status(404).json({ success: false, message: "Target block not found in any branch" });
+    //   }
+
+    //   const { branch: targetBranch, branchId: foundBranchId, blockIndex, parentPath } = found;
+    //   const insertPosition = blockIndex + 1;
+
+    //   const newBlock = {
+    //     _id: new mongoose.Types.ObjectId(),
+    //     index: insertPosition,
+    //     blockId: data.blockId || Date.now(),
+    //     name: data.productName || data.blockType || "New Block",
+    //     type: data.blockType || data.type || "Regular",
+    //     elementType: data.elementType || data.type || "Regular",
+    //     fr: data.fr || 0.001,
+    //     mtbf: data.mtbf || (data.fr ? 1000 / data.fr : 1000),
+    //     time: data.time,
+    //     repair: data.repair,
+    //     inspectionPeriod: data.inspectionPeriod,
+    //     dutyCycle: data.dutyCycle,
+    //     color: data.color,
+    //     frDistribution: data.frDistribution,
+    //     repairDistribution: data.repairDistribution,
+    //     load: data.load,
+    //     mct: data.mct,
+    //     partNumber: data.partNumber,
+    //     productName: data.productName,
+    //     fmecaId: data.fmecaId,
+    //     fmDescription: data.fmDescription,
+    //     reliabilityData: {
+    //       partNumber: data.partNumber,
+    //       productId: data.productId,
+    //       fmecaId: data.fmecaId,
+    //       fmDescription: data.fmDescription,
+    //       time: data.time,
+    //       repair: data.repair,
+    //       inspectionPeriod: data.inspectionPeriod,
+    //       dutyCycle: data.dutyCycle,
+    //       color: data.color,
+    //       frDistribution: data.frDistribution,
+    //       repairDistribution: data.repairDistribution,
+    //       load: data.load,
+    //       mct: data.mct,
+    //       elementType: data.elementType,
+    //       indexCount: data.indexCount,
+    //       k: data.k,
+    //       n: data.n
+    //     }
+    //   };
+
+    //   let updatedRBD;
+
+    //   if (parentPath?.length > 0) {
+    //     // Nested branch
+    //     let pathString = "branches";
+    //     let arrayFilters = [];
+
+    //     for (let idx = 0; idx < parentPath.length; idx++) {
+    //       const seg = parentPath[idx];
+    //       pathString += `.$[branch${idx}].blocks.$[block${idx}].branches`;
+    //       arrayFilters.push({ [`branch${idx}._id`]: parentDocument.branches[seg.branchIndex]._id });
+    //       arrayFilters.push({ [`block${idx}._id`]: seg.blockId });
+    //     }
+
+    //     pathString += `.$[targetBranch].blocks`;
+    //     arrayFilters.push({ "targetBranch._id": foundBranchId });
+
+    //     updatedRBD = await ElementParameterData.findOneAndUpdate(
+    //       { rbdId: data.rbdId },
+    //       {
+    //         "$push": {
+    //           [pathString]: {
+    //             "$each": [newBlock],
+    //             "$position": insertPosition
+    //           }
+    //         }
+    //       },
+    //       { arrayFilters, new: true }
+    //     );
+
+    //   } else {
+    //     // Top-level branch
+    //     updatedRBD = await ElementParameterData.findOneAndUpdate(
+    //       { rbdId: data.rbdId, "branches._id": foundBranchId },
+    //       {
+    //         "$push": {
+    //           "branches.$.blocks": {
+    //             "$each": [newBlock],
+    //             "$position": insertPosition
+    //           }
+    //         }
+    //       },
+    //       { new: true }
+    //     );
+
+    //     // Reindex after insertion
+    //     if (updatedRBD) {
+    //       const updatedBranch = updatedRBD.branches.find(b => b._id.toString() === foundBranchId);
+    //       if (updatedBranch) {
+    //         const updateIndexPromises = updatedBranch.blocks.map((block, idx) =>
+    //           ElementParameterData.updateOne(
+    //             { rbdId: data.rbdId, "branches._id": foundBranchId, "branches.blocks._id": block._id },
+    //             { "$set": { "branches.$[branch].blocks.$[block].index": idx } },
+    //             { "arrayFilters": [{ "branch._id": foundBranchId }, { "block._id": block._id }] }
+    //           )
+    //         );
+    //         await Promise.all(updateIndexPromises);
+    //         updatedRBD = await ElementParameterData.findOne({ rbdId: data.rbdId });
+    //       }
+    //     }
+    //   }
+
+    //   if (updatedRBD) {
+    //     return res.status(200).json({
+    //       success: true,
+    //       message: "New block inserted after target successfully",
+    //       data: updatedRBD,
+    //       newBlock
+    //     });
+    //   } else {
+    //     throw new Error("Failed to insert block after target");
+    //   }
+    // }
+
+    // // ─── CASE 3: no idforApi, no targetId — create standalone document ────────
+    // const elementParameters = await ElementParameterData.create({
+    //   indexCount: data.indexCount,
+    //   partNumber: data.partNumber,
+    //   productName: data.productName,
+    //   rbdId: data.rbdId,
+    //   fr: data.fr,
+    //   blockId: data.blockId,
+    //   productId: data.productId,
+    //   fmecaId: data.fmecaId,
+    //   fmDescription: data.fmDescription,
+    //   elementType: data.elementType,
+    //   time: data.time,
+    //   repair: data.repair,
+    //   inspectionPeriod: data.inspectionPeriod,
+    //   dutyCycle: data.dutyCycle,
+    //   color: data.color,
+    //   frDistribution: data.frDistribution,
+    //   k: data.k,
+    //   n: data.n,
+    //   repairDistribution: data.repairDistribution,
+    //   load: data.load,
+    //   mct: data.mct,
+    //   projectId: data.projectId,
+    //   companyId: data.companyId,
+    //   type: data.blockType || data.type || "Regular",
+    // });
+
+    const docs = await ElementParameterData.find({ rbdId: data.rbdId });
+
+    let arr = docs.map(doc => doc.toObject());
+
+    // Insert logic
+    if (!targetId) {
+      arr.push({
+        ...data,
+        _id: new mongoose.Types.ObjectId()
+      });
+    } else {
+      const targetIndex = arr.findIndex(
+        d => d._id.toString() === targetId.toString()
+      );
+
+      if (targetIndex === -1) {
+        return res.status(404).json({ message: "Target not found" });
+      }
+
+      arr.splice(targetIndex + 1, 0, {
+        ...data,
+        _id: new mongoose.Types.ObjectId()
+      });
+    }
+
+    // Save back
+    await ElementParameterData.deleteMany({ rbdId: data.rbdId });
+    await ElementParameterData.insertMany(arr);
+
+    return res.status(201).json({
       success: true,
-      data: elementParameters
+      data: arr
     });
 
   } catch (error) {
@@ -517,7 +720,6 @@ export const createElementParameter = async (req, res) => {
     });
   }
 };
-
 
 export const updateelementParameters = async (req, res) => {
   const data = req.body
@@ -551,7 +753,7 @@ export const updateelementParameters = async (req, res) => {
       id,
       data,
       { new: true }
-      
+
     );
 
     if (!elementParameters) {
