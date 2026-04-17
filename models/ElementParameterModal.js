@@ -28,6 +28,13 @@ const blockSchema = new Schema({
   // K-of-N parameters
   k: Number,
   n: Number,
+  reliability: Number,
+  unavailability: Number,
+   lambda: Number,
+   mu: Number,
+   mttr: Number,
+   productId: String,
+  // Product details
 
   // Parallel section specific fields (for nested parallel sections)
   arrangement: {
@@ -151,6 +158,35 @@ const elementParameterSchema = new Schema(
     // K-of-N parameters
     k: Number,
     n: Number,
+
+    reliability: Number,
+    unavailability: Number,
+    lambda: Number,
+    mu: Number,
+    mttr: Number,
+
+ kOfNType: {
+      type: String,
+      enum: ['Identical', 'Non-Identical', 'Identical (Load Sharing)'],
+      default: 'Identical'
+    },
+    
+    // For Non-Identical K-out-of-N (store components if needed)
+    components: [{
+      lambda: Number,
+      mu: Number,
+      mttr: String,
+      productId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Product",
+      },
+      productName: String,
+      reliability: Number,
+      unavailability: Number,
+      isManual: Boolean
+    }],
+    
+    
 
     // Product details
     partNumber: String,
