@@ -241,25 +241,17 @@ import mongoose from "mongoose";
 // };
 
 export const createElementParameter = async (req, res) => {
-  console.log(req.body, ": req.body");
 
   try {
     const data = req.body;
     const idforApi = data?.idforApi;
     const targetId = data?.targetId;
-    console.log(idforApi, ": idforApi");
-    console.log(targetId, ": targetId");
-
-    console.log(data, 'data')
-
     // ─── CASE 1: idforApi exists — insert into branch by ItemId ──────────────
     if (idforApi) {
-      console.log('itemId idfor api');
       const { ItemId, branchId, branchIndex, location, nested } = idforApi;
 
       const parentDocument = await ElementParameterData.findById(ItemId);
       if (!parentDocument) {
-        console.log("Parent not found → creating standalone element");
 
         const newElement = await ElementParameterData.create({
           indexCount: data.indexCount,
@@ -337,8 +329,6 @@ export const createElementParameter = async (req, res) => {
         if (result) {
           targetBranch = result.branch;
           parentPath = result.parentPath;
-          console.log('Found nested branch:', targetBranch._id);
-          console.log('Parent path:', parentPath);
         }
       }
 
@@ -361,44 +351,44 @@ export const createElementParameter = async (req, res) => {
       }
 
       const newBlock = {
-             name: data.name,
-  k: data.k,
-  n: data.n,
-   lambda: data.lambda,
-   reliability: data.reliability,
-   unavailability: data.unavailability,
-   mu: data.mu,
-   mttr: data.mttr,
-   productId: data.productId,
-   components: data.components || [], 
-    // productId: "692013b2dc0b1e4b0c9a3d44",
-    indexCount: data.indexCount,
-    partNumber: data.partNumber,
-    productName: data.productName,
-    rbdId: data.rbdId,
-    fr: data.fr,
-    // blockId:data.blockId,
-    productId: data.productId,
-    fmecaId: data.fmecaId,
-    fmDescription: data.fmDescription,
-    elementType: data.elementType,
-    time: data.time,
-    repair: data.repair,
-    inspectionPeriod: data.inspectionPeriod,
-    dutyCycle: data.dutyCycle,
-    color: data.color,
-    frDistribution: data.frDistribution,
-    k: data.k,
-    n: data.n,
-    repairDistribution: data.repairDistribution,
-    load: data.load,
-    mct: data.mct,
-    projectId: data.projectId,
-    companyId: data.companyId,
-    type: data.blockType || data.type || "Regular" || "K-out-of-N",
-     kOfNType: data.kOfNType || data.selectedLabel || 'Identical',
-    // Save components for non-identical
-    components: data.components || [],
+        name: data.name,
+        k: data.k,
+        n: data.n,
+        lambda: data.lambda,
+        reliability: data.reliability,
+        unavailability: data.unavailability,
+        mu: data.mu,
+        mttr: data.mttr,
+        productId: data.productId,
+        components: data.components || [],
+        // productId: "692013b2dc0b1e4b0c9a3d44",
+        indexCount: data.indexCount,
+        partNumber: data.partNumber,
+        productName: data.productName,
+        rbdId: data.rbdId,
+        fr: data.fr,
+        // blockId:data.blockId,
+        productId: data.productId,
+        fmecaId: data.fmecaId,
+        fmDescription: data.fmDescription,
+        elementType: data.elementType,
+        time: data.time,
+        repair: data.repair,
+        inspectionPeriod: data.inspectionPeriod,
+        dutyCycle: data.dutyCycle,
+        color: data.color,
+        frDistribution: data.frDistribution,
+        k: data.k,
+        n: data.n,
+        repairDistribution: data.repairDistribution,
+        load: data.load,
+        mct: data.mct,
+        projectId: data.projectId,
+        companyId: data.companyId,
+        type: data.blockType || data.type || "Regular" || "K-out-of-N",
+        kOfNType: data.kOfNType || data.selectedLabel || 'Identical',
+        // Save components for non-identical
+        components: data.components || [],
         _id: new mongoose.Types.ObjectId(),
         index: insertPosition !== null ? insertPosition : currentBlocks.length,
         blockId: data.blockId || Date.now(),
@@ -406,7 +396,7 @@ export const createElementParameter = async (req, res) => {
         type: data.blockType || data.type || "Regular",
         elementType: data.elementType || data.type || "Regular",
         fr: data.fr || 0.001,
-        mtbf: data.mtbf ,
+        mtbf: data.mtbf,
         time: data.time,
         repair: data.repair,
         inspectionPeriod: data.inspectionPeriod,
@@ -447,7 +437,6 @@ export const createElementParameter = async (req, res) => {
       let updatedRBD;
       if (parentPath.length > 0) {
         // Nested branch
-        console.log('Updating nested branch');
         let pathString = "branches";
         let arrayFilters = [];
 
@@ -476,7 +465,6 @@ export const createElementParameter = async (req, res) => {
 
       } else {
         // Top-level branch
-        console.log('Updating top-level branch');
 
         updatedRBD = await ElementParameterData.findOneAndUpdate(
           { "_id": ItemId, "branches._id": branchId },
@@ -823,6 +811,8 @@ export const createElementParameter = async (req, res) => {
 
     const docs = await ElementParameterData.find({ rbdId: data.rbdId });
 
+    // console.log(docs,'docs')
+
     let arr = docs.map(doc => doc.toObject());
 
     if (arr.length === 0) {
@@ -846,7 +836,6 @@ export const createElementParameter = async (req, res) => {
         _id: new mongoose.Types.ObjectId()
       });
     } else {
-      console.log("Workking with taret id",targetId)
       const targetIndex = arr.findIndex(
         d => d._id.toString() === targetId.toString()
       );
@@ -882,8 +871,6 @@ export const createElementParameter = async (req, res) => {
 export const updateelementParameters = async (req, res) => {
   const data = req.body
   const { id } = req.params
-  console.log(id, 'id form frontend')
-  console.log(data, 'data for update')
   try {
     const elementParameters = await ElementParameterData.findByIdAndUpdate(
       // indexCount: data.indexCount,
@@ -936,10 +923,6 @@ export const updateNestedBlock = async (req, res) => {
   try {
     const { parentId, blockId } = req.params;
     const updateData = req.body;
-
-    console.log('Parent ID:', parentId);
-    console.log('Block ID:', blockId);
-    console.log('Update data:', updateData);
 
     // Find the parent parallel section
     const parentSection = await ElementParameterData.findById(parentId);
@@ -1010,7 +993,7 @@ export const getElementParameterById = async (req, res) => {
   const { rbdId, projectId } = req.params
   const data = req.body;
 
-  
+
 
   try {
     const elementParameter = await ElementParameterData.find({ projectId, rbdId });
@@ -1020,7 +1003,6 @@ export const getElementParameterById = async (req, res) => {
         message: "Element Parameter not found",
       });
     }
-    console.log("elementParameters12334567",elementParameter[29]);
     res.status(200).json({
       success: true,
       data: elementParameter,
@@ -1034,7 +1016,10 @@ export const getElementParameterById = async (req, res) => {
 }
 
 export const createParallelSection = async (req, res) => {
+
+  const data = req.body;
   const { rbdId, projectId } = req.params;
+
 
   try {
     const {
@@ -1051,7 +1036,8 @@ export const createParallelSection = async (req, res) => {
       targetId,
     } = req.body;
 
-  
+
+
 
     // ── NESTED: add parallel section inside an existing branch ──────────────
     if (parentId && targetId) {
@@ -1128,7 +1114,7 @@ export const createParallelSection = async (req, res) => {
       }
 
       const { containingBranch, path } = result;
-    
+
 
       if (!branches || !Array.isArray(branches) || branches.length === 0) {
         return res.status(400).json({
@@ -1231,7 +1217,7 @@ export const createParallelSection = async (req, res) => {
       pathString += `.$[targetBranch].blocks`;
       arrayFilters.push({ "targetBranch._id": new mongoose.Types.ObjectId(containingBranch._id) });
 
-    
+
 
       const updatedDocument = await ElementParameterData.findOneAndUpdate(
         { "_id": parentId },
@@ -1354,7 +1340,24 @@ export const createParallelSection = async (req, res) => {
       };
     });
 
-    const parallelSection = await ElementParameterData.create({
+    // const parallelSection = await ElementParameterData.create({
+    //   rbdId,
+    //   projectId,
+    //   companyId,
+    //   productId,
+    //   name: name || "Parallel Section",
+    //   type: "Parallel Section",
+    //   elementType: "Parallel Section",
+    //   arrangement: arrangement || "horizontal",
+    //   k: k || 1,
+    //   n: n || branches.length,
+    //   branches: formattedBranches,
+    //   isParallel: true,
+    //   isParallelBranch: false,
+    // });
+
+    const newParallelSection = {
+      _id: new mongoose.Types.ObjectId(),
       rbdId,
       projectId,
       companyId,
@@ -1368,12 +1371,52 @@ export const createParallelSection = async (req, res) => {
       branches: formattedBranches,
       isParallel: true,
       isParallelBranch: false,
-    });
+    };
+
+    const docs = await ElementParameterData.find({ rbdId });
+    let arr = docs.map(doc => doc.toObject());
+
+
+    if (arr.length === 0) {
+      await ElementParameterData.create(newParallelSection);
+
+      return res.status(201).json({
+        success: true,
+        message: "First parallel section created",
+        data: [newParallelSection]
+      });
+    }
+
+    if (targetId) {
+      const targetIndex = arr.findIndex(d =>
+        d._id.toString() === String(targetId)
+      );
+
+
+      if (targetIndex === -1) {
+        return res.status(404).json({
+          success: false,
+          message: "Target not found"
+        });
+      }
+
+      arr.splice(targetIndex + 1, 0, newParallelSection);
+    } else {
+      arr.push(newParallelSection);
+    }
+
+    arr = arr.map((item, idx) => ({
+      ...item,
+      index: idx
+    }));
+
+    await ElementParameterData.deleteMany({ rbdId });
+    await ElementParameterData.insertMany(arr);
 
     return res.status(201).json({
       success: true,
-      message: `Parallel Section created successfully with ${branches.length} branches`,
-      data: parallelSection
+      message: "Parallel section inserted successfully",
+      data: arr
     });
 
   } catch (error) {
@@ -1408,7 +1451,7 @@ export const deleteNestedBlock = async (req, res) => {
   try {
     const { parentId, blockId } = req.params;
 
-   
+
 
     // Find the parent parallel section
     const parentSection = await ElementParameterData.findById(parentId);
@@ -1456,7 +1499,6 @@ export const deleteNestedBlock = async (req, res) => {
             blockFound = true;
             blockFoundInBranch = true;
             deletedBlockData = block.toObject();
-            console.log(`Found block ${targetBlockId} in branch`);
             continue; // Skip adding this block to remainingBlocks
           }
 
@@ -1487,7 +1529,6 @@ export const deleteNestedBlock = async (req, res) => {
           // We found the block in this branch's direct blocks
           if (remainingBlocks.length === 0) {
             // Branch has no blocks left, don't add this branch to updatedBranches
-            console.log(`Branch became empty, removing it`);
             continue;
           } else {
             // Branch still has blocks, add it with remaining blocks
@@ -1543,7 +1584,6 @@ export const deleteNestedBlock = async (req, res) => {
 
     // Check if the entire parallel section became empty
     if (!modifiedSection.branches || modifiedSection.branches.length === 0) {
-      console.log('No branches left, deleting entire parent parallel section');
       await ElementParameterData.findByIdAndDelete(parentId);
 
       return res.status(200).json({
@@ -1559,7 +1599,6 @@ export const deleteNestedBlock = async (req, res) => {
 
     // Check if only ONE branch remains - convert to regular block
     if (modifiedSection.branches.length === 1) {
-      console.log('Only one branch remains, converting parallel section to regular block');
 
       const remainingBranch = modifiedSection.branches[0];
       const blockToConvert = remainingBranch.blocks && remainingBranch.blocks.length > 0
@@ -1597,7 +1636,6 @@ export const deleteNestedBlock = async (req, res) => {
           projectId: modifiedSection.projectId,
           companyId: modifiedSection.companyId
         };
-        console.log("regularBlockData...", regularBlockData)
         // Delete the old parallel section
         await ElementParameterData.findByIdAndDelete(parentId);
 
