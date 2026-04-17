@@ -7,7 +7,6 @@ import hpp from "hpp";
 import cors from "cors";
 import globalErrHandler from "./controllers/errorController.js";
 import AppError from "./utils/appError.js";
-
 const app = express();
 
 //Routes

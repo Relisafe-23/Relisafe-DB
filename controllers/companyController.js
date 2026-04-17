@@ -1,6 +1,7 @@
 import Company from "../models/companyModel.js";
 import { getAll, getOne, deleteOne, updateOne } from "./baseController.js";
 import User from "../models/userModel.js";
+import bcrypt from 'bcrypt';
 
 export const getCompany = getOne(Company);
 // export const getAllCompany = getAll(Company);
@@ -19,9 +20,13 @@ export async function getAllCompany(req, res, next) {
   }
 }
 
+
+
 export async function createCompany(req, res, next) {
   try {
     const data = req.body;
+    
+    // Check if company exists
     const existEmail = await Company.find({
       id: data.companyId,
     });
@@ -29,51 +34,78 @@ export async function createCompany(req, res, next) {
     const isEmailExists = existEmail.length === 0;
 
     if (!isEmailExists) {
-      res.status(208).json({
+      return res.status(208).json({
         message: "Company Or Email Already Exist",
         existEmail,
       });
     }
 
     if (isEmailExists) {
+      // Update company
       const company = await Company.findByIdAndUpdate(data.companyId, {
         companyName: data.companyName,
       });
 
-      const existEmailUser = await User.find({
+      // Check if user email exists
+      const existEmailUser = await User.findOne({
         email: data.email,
       });
 
-      const isEmailUserExists = existEmailUser.length === 0;
-
-      if (!isEmailUserExists) {
-        res.status(208).json({
+      if (existEmailUser) {
+        return res.status(208).json({
           message: "User Email Already Exist",
           existEmailUser,
         });
       }
-      if (isEmailUserExists) {
-        const companyUser = await User.create({
-          companyName: data.companyName,
-          name: data.name,
-          password: data.password,
-          email: data.email,
-          confirmPassword: data.confirmPassword,
-          phoneNumber: data.phoneNumber,
-          companyId: data.companyId,
-          role: data.role,
-          isSuperAdminCreated: true,
-        });
 
-        res.status(201).json({
-          message: "Company Details Created Successfully",
-          company,
-          companyUser,
+      // Validate password and confirm password
+      if (data.password !== data.confirmPassword) {
+        return res.status(400).json({
+          message: "Password and Confirm Password do not match",
         });
       }
+
+      // Hash the password before creating user
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(data.password, saltRounds);
+
+      // Create company user
+      const companyUser = await User.create({
+        companyName: data.companyName,
+        name: data.name,
+        password: hashedPassword, // Store hashed password
+        email: data.email,
+        phoneNumber: data.phoneNumber,
+        companyId: data.companyId,
+        role: data.role,
+        isSuperAdminCreated: true,
+        // Don't store confirmPassword in database
+      });
+
+      // Remove password from response
+      const userResponse = {
+        _id: companyUser._id,
+        name: companyUser.name,
+        email: companyUser.email,
+        companyName: companyUser.companyName,
+        phoneNumber: companyUser.phoneNumber,
+        role: companyUser.role,
+        companyId: companyUser.companyId,
+        isSuperAdminCreated: companyUser.isSuperAdminCreated
+      };
+
+      res.status(201).json({
+        message: "Company Details Created Successfully",
+        company,
+        companyUser: userResponse, // Send user without password
+      });
     }
   } catch (err) {
     console.log("err", err);
+    res.status(500).json({
+      message: "Internal Server Error",
+      error: err.message
+    });
   }
 }
 
