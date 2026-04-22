@@ -242,7 +242,7 @@ import mongoose from "mongoose";
 
 export const createElementParameter = async (req, res) => {
 
-  console.log(req.body,'from parallel inside')
+  console.log(req.body, 'from parallel inside')
 
   try {
     const data = req.body;
@@ -813,7 +813,146 @@ export const createElementParameter = async (req, res) => {
 
     let arr = docs.map(doc => doc.toObject());
 
-    console.log(arr,'arr')
+    // console.log(arr, 'arr')
+    // console.log(targetId, 'arr')
+
+
+    // if (arr.length === 0) {
+    //   const newDoc = {
+    //     ...data,
+    //     _id: new mongoose.Types.ObjectId()
+    //   };
+
+    //   await ElementParameterData.create(newDoc);
+
+    //   return res.status(201).json({
+    //     success: true,
+    //     message: "First element created",
+    //     data: [newDoc]
+    //   });
+    // }
+
+    // if (!targetId) {
+    //   arr.push({
+    //     ...data,
+    //     _id: new mongoose.Types.ObjectId()
+    //   });
+    // } else {
+    //   // const targetIndex = arr.findIndex(
+    //   //   d => d._id.toString() === targetId.toString()
+    //   // );
+
+
+    //   const targetIndex = arr.findIndex(d => {
+    //     const docId = d._id?.toString?.() || String(d._id);
+    //     const targetIdStr = targetId.toString();
+    //     return docId === targetIdStr;
+    //   });
+
+    //   console.log('Searching for targetId:', targetId.toString());
+    //   console.log('Available IDs:', arr.map(d => d._id?.toString?.() || String(d._id)));
+    //   console.log('Target index:', targetIndex);
+
+    //   if (targetIndex === -1) {
+    //     return res.status(404).json({ message: "Target not found" });
+    //   }
+
+    //   arr.splice(targetIndex + 1, 0, {
+    //     ...data,
+    //     _id: new mongoose.Types.ObjectId()
+    //   });
+    // }
+
+    // await ElementParameterData.deleteMany({ rbdId: data.rbdId });
+    // await ElementParameterData.insertMany(arr);
+
+    // return res.status(201).json({
+    //   success: true,
+    //   data: arr
+    // });
+
+    console.log(arr, 'arr');
+    console.log(targetId, 'arr');
+
+    // Recursive function to find an element and its parent context
+    const findNestedBlockContext = (items, targetId) => {
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+
+        // Check current item's _id
+        if (item._id && item._id.toString() === targetId.toString()) {
+          return {
+            found: true,
+            context: 'top-level',
+            parentArray: items,
+            index: i,
+            item: item
+          };
+        }
+
+        // Check if this is a Parallel Section with branches
+        if ((item.type === 'Parallel Section' || item.elementType === 'Parallel Section') &&
+          item.branches && Array.isArray(item.branches)) {
+
+          for (let branchIdx = 0; branchIdx < item.branches.length; branchIdx++) {
+            const branch = item.branches[branchIdx];
+
+            if (branch.blocks && Array.isArray(branch.blocks)) {
+              for (let blockIdx = 0; blockIdx < branch.blocks.length; blockIdx++) {
+                const block = branch.blocks[blockIdx];
+
+                // Check block's _id
+                if (block._id && block._id.toString() === targetId.toString()) {
+                  return {
+                    found: true,
+                    context: 'nested-in-branch',
+                    parentSection: item,
+                    branch: branch,
+                    branchIndex: branchIdx,
+                    blockIndex: blockIdx,
+                    parentArray: branch.blocks,
+                    index: blockIdx,
+                    item: block
+                  };
+                }
+
+                // If block is also a Parallel Section, search its nested branches
+                if ((block.type === 'Parallel Section' || block.elementType === 'Parallel Section') &&
+                  block.branches && Array.isArray(block.branches)) {
+
+                  for (let nestedBranchIdx = 0; nestedBranchIdx < block.branches.length; nestedBranchIdx++) {
+                    const nestedBranch = block.branches[nestedBranchIdx];
+
+                    if (nestedBranch.blocks && Array.isArray(nestedBranch.blocks)) {
+                      for (let nestedBlockIdx = 0; nestedBlockIdx < nestedBranch.blocks.length; nestedBlockIdx++) {
+                        const nestedBlock = nestedBranch.blocks[nestedBlockIdx];
+
+                        if (nestedBlock._id && nestedBlock._id.toString() === targetId.toString()) {
+                          return {
+                            found: true,
+                            context: 'nested-in-nested-branch',
+                            parentSection: block,
+                            parentSectionIndex: i,
+                            branch: nestedBranch,
+                            branchIndex: nestedBranchIdx,
+                            blockIndex: nestedBlockIdx,
+                            parentArray: nestedBranch.blocks,
+                            index: nestedBlockIdx,
+                            item: nestedBlock
+                          };
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      return { found: false };
+    };
 
     if (arr.length === 0) {
       const newDoc = {
@@ -831,25 +970,62 @@ export const createElementParameter = async (req, res) => {
     }
 
     if (!targetId) {
+      // No target ID, push to top level
       arr.push({
         ...data,
         _id: new mongoose.Types.ObjectId()
       });
     } else {
-      const targetIndex = arr.findIndex(
-        d => d._id.toString() === targetId.toString()
-      );
+      // Search for the target block in nested structure
+      const searchResult = findNestedBlockContext(arr, targetId);
 
-      if (targetIndex === -1) {
-        return res.status(404).json({ message: "Target not found" });
+      console.log('Search result:', JSON.stringify(searchResult, null, 2));
+
+      if (!searchResult.found) {
+        return res.status(404).json({
+          message: "Target not found",
+          searchedId: targetId,
+          availableTopLevelIds: arr.map(d => d._id?.toString?.() || String(d._id))
+        });
       }
 
-      arr.splice(targetIndex + 1, 0, {
+      // Create the new block
+      const newBlock = {
         ...data,
-        _id: new mongoose.Types.ObjectId()
-      });
+        _id: new mongoose.Types.ObjectId(),
+        isNested: true,  // Mark as nested
+        type: data.type || 'Regular',
+        elementType: data.elementType || 'Regular'
+      };
+
+      // Insert based on where the target was found
+      if (searchResult.context === 'top-level') {
+        // Insert at top level after the target
+        arr.splice(searchResult.index + 1, 0, newBlock);
+      }
+      else if (searchResult.context === 'nested-in-branch') {
+        // Insert in the same branch's blocks array, right after the target block
+        searchResult.parentArray.splice(searchResult.index + 1, 0, newBlock);
+
+        // Mark the parent section as modified
+        const sectionIndex = arr.findIndex(s => s._id.toString() === searchResult.parentSection._id.toString());
+        if (sectionIndex !== -1) {
+          arr[sectionIndex] = searchResult.parentSection;
+        }
+      }
+      else if (searchResult.context === 'nested-in-nested-branch') {
+        // Insert in deeply nested branch's blocks array
+        searchResult.parentArray.splice(searchResult.index + 1, 0, newBlock);
+
+        // Update the parent section
+        const sectionIndex = arr.findIndex(s => s._id.toString() === searchResult.parentSection._id.toString());
+        if (sectionIndex !== -1) {
+          arr[sectionIndex] = searchResult.parentSection;
+        }
+      }
     }
 
+    // Save the entire structure
     await ElementParameterData.deleteMany({ rbdId: data.rbdId });
     await ElementParameterData.insertMany(arr);
 
@@ -872,7 +1048,7 @@ export const updateelementParameters = async (req, res) => {
   const data = req.body
   const { id } = req.params
 
-  console.log(data,'data for edit')
+  console.log(data, 'data for edit')
   try {
     const elementParameters = await ElementParameterData.findByIdAndUpdate(
       // indexCount: data.indexCount,
@@ -948,11 +1124,11 @@ export const updateNestedBlock = async (req, res) => {
 
       for (let i = 0; i < branches.length; i++) {
         const branch = branches[i];
-        
+
         if (branch.blocks && Array.isArray(branch.blocks)) {
           for (let j = 0; j < branch.blocks.length; j++) {
             const block = branch.blocks[j];
-            
+
             // Check if this is the block we want to update
             if (block._id.toString() === blockId) {
               // Update the block
@@ -963,16 +1139,16 @@ export const updateNestedBlock = async (req, res) => {
                 type: updateData.type || 'Regular',
                 elementType: updateData.elementType || 'Regular'
               };
-              
+
               branch.blocks[j] = updatedBlock;
               updatedBlockData = updatedBlock;
               return true;
             }
-            
+
             // If this block is a Parallel Section with nested branches, search inside it
-            if ((block.type === 'Parallel Section' || block.elementType === 'Parallel Section') && 
-                block.branches && 
-                Array.isArray(block.branches)) {
+            if ((block.type === 'Parallel Section' || block.elementType === 'Parallel Section') &&
+              block.branches &&
+              Array.isArray(block.branches)) {
               const found = findAndUpdateBlock(block.branches);
               if (found) return true;
             }
@@ -1040,7 +1216,7 @@ export const getElementParameterById = async (req, res) => {
 export const createParallelSection = async (req, res) => {
 
   const data = req.body;
-  console.log(data,'data from parallel branch')
+  console.log(data, 'data from parallel branch')
   const { rbdId, projectId } = req.params;
 
 
@@ -1470,8 +1646,8 @@ export const deleteelementParameters = async (req, res) => {
 
 export const deleteNestedBlock = async (req, res) => {
   console.log('deleting nested block');
-  console.log(req.body,'req.body');
-  console.log(req.params,'req.params');
+  console.log(req.body, 'req.body');
+  console.log(req.params, 'req.params');
 
   try {
     const { parentId, blockId } = req.params;
