@@ -1895,3 +1895,176 @@ export const deleteNestedBlock = async (req, res) => {
     });
   }
 };
+
+
+export const addParallelBranch = async (req, res) => {
+  const { rbdId, projectId } = req.params;
+
+  try {
+    const { startBlockId, endBlockId, companyId } = req.body;
+    // startBlockId = RelateId of block LEFT of start node (can be null if first node)
+    // endBlockId   = RelateId of block RIGHT of end node
+
+    // 1. Fetch all docs for this RBD in order
+    const allDocs = await ElementParameterData.find({ rbdId }).sort({ index: 1 });
+    let arr = allDocs.map(d => d.toObject());
+
+    // 2. Find si and ei (same logic as frontend)
+    const getId = (d) => String(d._id ?? d.id ?? "");
+
+    const si = startBlockId == null
+      ? -1
+      : arr.findIndex(d => getId(d) === String(startBlockId));
+
+    const ei = endBlockId == null
+      ? arr.length - 1
+      : arr.findIndex(d => getId(d) === String(endBlockId));
+
+    if (si === -1 && startBlockId != null) {
+      return res.status(404).json({ success: false, message: "Start block not found" });
+    }
+    if (ei === -1) {
+      return res.status(404).json({ success: false, message: "End block not found" });
+    }
+
+    // 3. mainBlocks = arr[si+1 .. ei] inclusive (same as frontend slice)
+    const wrapStart = si + 1;
+    const wrapEnd = ei + 1; // slice end exclusive
+
+    if (wrapStart >= wrapEnd) {
+      return res.status(400).json({
+        success: false,
+        message: "No blocks between the selected nodes"
+      });
+    }
+
+    const mainBlocks = arr.slice(wrapStart, wrapEnd);
+    if (!mainBlocks.length) {
+      return res.status(400).json({
+        success: false,
+        message: "No blocks between the selected nodes"
+      });
+    }
+
+    // 4. Build the new Parallel Section (mirrors frontend section object exactly)
+    const newParallelSection = {
+      _id: new mongoose.Types.ObjectId(),
+      rbdId,
+      projectId,
+      companyId: companyId || mainBlocks[0].companyId,
+      productId: mainBlocks[0].productId || null,
+      name: "Parallel Section",
+      type: "Parallel Section",
+      elementType: "Parallel Section",
+      arrangement: "horizontal",
+      k: 1,
+      n: 2,
+      isParallel: true,
+      isParallelBranch: false,
+      kOfNType: "Identical",
+      branches: [
+        {
+          // Branch 1: Main Branch — contains the wrapped mainBlocks
+          _id: new mongoose.Types.ObjectId(),
+          index: 0,
+          name: "Main Branch",
+          blocks: mainBlocks.map((block, bIdx) => ({
+            _id: new mongoose.Types.ObjectId(),
+            index: bIdx,
+            blockId: block.blockId || null,
+            name: block.name || `Block ${bIdx + 1}`,
+            type: block.type || "Regular",
+            elementType: block.elementType || "REGULAR",
+            fr: block.fr ?? 0,
+            mtbf: block.mtbf ?? 0,
+            partNumber: block.partNumber,
+            productName: block.productName,
+            fmecaId: block.fmecaId,
+            fmDescription: block.fmDescription,
+            repair: block.repair,
+            mttr: block.mttr,
+            inspectionPeriod: block.inspectionPeriod,
+            dutyCycle: block.dutyCycle,
+            color: block.color,
+            frDistribution: block.frDistribution,
+            repairDistribution: block.repairDistribution,
+            load: block.load,
+            mct: block.mct,
+            k: block.k,
+            n: block.n,
+            rbdId: block.rbdId,
+            projectId: block.projectId,
+            companyId: block.companyId,
+            productId: block.productId,
+            branches: [],
+            // Preserve nested parallel section branches if block is a Parallel Section
+            ...(block.elementType === "Parallel Section" && {
+              branches: block.branches || [],
+              arrangement: block.arrangement,
+              isParallel: true,
+            }),
+          })),
+        },
+        {
+          // Branch 2: Bypass Branch — empty bypass (mirrors frontend exactly)
+          _id: new mongoose.Types.ObjectId(),
+          index: 1,
+          name: "Bypass Branch",
+          blocks: [
+            {
+              _id: new mongoose.Types.ObjectId(),
+              index: 0,
+              name: "Bypass Block",
+              type: "Regular",
+              elementType: "REGULAR",
+              fr: 0,
+              mtbf: 0,
+              branches: [],
+            }
+          ],
+        }
+      ],
+      components: [],
+    };
+
+    // 5. Remove mainBlocks from arr, insert new Parallel Section at their position
+    //    (same logic as frontend)
+    const toRemove = new Set(mainBlocks.map(d => getId(d)));
+    const insertAt = arr.findIndex(d => getId(d) === getId(mainBlocks[0]));
+
+    const remaining = arr.filter(d => !toRemove.has(getId(d)));
+
+    // Find insert position in remaining array (after removals)
+    let insertInRemaining = remaining.findIndex(d => {
+      const origIdx = arr.findIndex(ob => getId(ob) === getId(d));
+      return origIdx > insertAt + mainBlocks.length - 1;
+    });
+    if (insertInRemaining === -1) insertInRemaining = remaining.length;
+
+    const next = [...remaining];
+    next.splice(insertInRemaining, 0, newParallelSection);
+
+    // 6. Re-index
+    const reIndexed = next.map((item, idx) => ({ ...item, index: idx }));
+
+    // 7. Delete old docs for this RBD, insert the new array
+    //    Also delete the mainBlock docs since they are now embedded inside the branch
+    await ElementParameterData.deleteMany({ rbdId });
+    await ElementParameterData.insertMany(reIndexed);
+
+    return res.status(201).json({
+      success: true,
+      message: "Parallel branch created successfully",
+      data: reIndexed,
+      newParallelSection,
+    });
+
+  } catch (error) {
+    console.error("addParallelBranch Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error creating parallel branch",
+      error: error.message
+    });
+  }
+};
