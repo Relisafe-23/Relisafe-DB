@@ -871,8 +871,8 @@ export const createElementParameter = async (req, res) => {
     //   data: arr
     // });
 
-    console.log(arr, 'arr');
-    console.log(targetId, 'arr');
+    // console.log(arr, 'arr');
+    console.log(targetId, 'arr target id');
 
     // Recursive function to find an element and its parent context
     const findNestedBlockContext = (items, targetId) => {
