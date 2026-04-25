@@ -1221,7 +1221,6 @@ export const createParallelSection = async (req, res) => {
   console.log(data, 'data from parallel branch')
   const { rbdId, projectId } = req.params;
 
-
   try {
     const {
       companyId,
@@ -1992,6 +1991,8 @@ export const addParallelBranch = async (req, res) => {
             k: block.k,
             n: block.n,
             rbdId: block.rbdId,
+            reliability: block.reliability,
+            unavailability: block.unavailability,
             projectId: block.projectId,
             companyId: block.companyId,
             productId: block.productId,
