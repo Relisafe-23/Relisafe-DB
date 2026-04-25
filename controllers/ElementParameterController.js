@@ -397,7 +397,7 @@ export const createElementParameter = async (req, res) => {
         name: data.productName || data.blockType || "New Block",
         type: data.blockType || data.type || "Regular",
         elementType: data.elementType || data.type || "Regular",
-        fr: data.fr || 0.001,
+        fr: data.fr || '',
         mtbf: data.mtbf,
         time: data.time,
         repair: data.repair,
@@ -1195,8 +1195,6 @@ export const getElementParameterById = async (req, res) => {
   const { rbdId, projectId } = req.params
   const data = req.body;
 
-
-
   try {
     const elementParameter = await ElementParameterData.find({ projectId, rbdId });
     if (!elementParameter) {
@@ -1238,9 +1236,6 @@ export const createParallelSection = async (req, res) => {
       parentId,
       targetId,
     } = req.body;
-
-
-
 
     // ── NESTED: add parallel section inside an existing branch ──────────────
     if (parentId && targetId) {
@@ -1342,8 +1337,8 @@ export const createParallelSection = async (req, res) => {
             name: block.name || `Block ${blockIdx + 1}`,
             type: block.type || "Regular",
             elementType: block.type || "Regular",
-            fr: block.fr ?? block.failureRate ?? 0.001,
-            mtbf: block.mtbf ?? 1000,
+            fr: block.fr || block.failureRate ||'',
+            mtbf: block.mtbf || '',
             ...(block.type === "Regular" && {
               partNumber: block.partNumber,
               productName: block.productName,
@@ -1512,8 +1507,8 @@ export const createParallelSection = async (req, res) => {
           name: block.name || `Block ${blockIdx + 1}`,
           type: block.type || "Regular",
           elementType: block.type || "Regular",
-          fr: block.fr ?? block.failureRate ?? 0.001,
-          mtbf: block.mtbf ?? 1000,
+          fr: block.fr || block.failureRate || '',
+          mtbf: block.mtbf || "",
           ...(block.type === "Regular" && {
             partNumber: block.partNumber,
             productName: block.productName,
