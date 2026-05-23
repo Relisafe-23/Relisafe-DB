@@ -198,13 +198,24 @@ export async function createChildNode(req, res, next) {
           await FTAtreeData.findByIdAndUpdate(id, {
             treeStructure: treeStructure,
           });
-          const getTableId = treeStructureData[0];
-          const getTotalGateId = getTableId.totalGateId;
-          const addTotalGateId = getTotalGateId + 1;
 
-          await FTAtreeData.findByIdAndUpdate(getTableId._id, {
-            totalGateId: addTotalGateId,
+          // const getTableId = treeStructureData[0];
+          // const getTotalGateId = getTableId.totalGateId;
+          // const addTotalGateId = getTotalGateId + 1;
+
+          // await FTAtreeData.findByIdAndUpdate(getTableId._id, {
+          //   totalGateId: addTotalGateId,
+          // });
+
+
+          const currentFTA = await FTAtreeData.findById(id); // id = existTree[productIndex].id
+
+          const updatedTotalGateId = (currentFTA.totalGateId || 0) + 1;
+
+          await FTAtreeData.findByIdAndUpdate(id, {
+            totalGateId: updatedTotalGateId,
           });
+
           res.status(201).json({
             message: "Created ChildNode",
             addNode,
@@ -258,7 +269,7 @@ export async function updateFTAtreeStructure(req, res, next) {
     });
 
     function updateChildTree(node) {
-      if (node.id === childId) {
+      if (node.id?.toString() === childId?.toString()) {
         node.description = data.description;
         node.gateType = data.gateType;
         node.gateId = data.gateId;
@@ -281,15 +292,14 @@ export async function updateFTAtreeStructure(req, res, next) {
       return false;
     }
     if (updateChildTree(treeStructureData.treeStructure)) {
-      await FTAtreeData.findOneAndUpdate(
-        { projectId: projectId },
-        { treeStructure: treeStructureData.treeStructure },
-        { new: true, runValidators: true }
-      );
-      const demo = await FTAtreeData.findOne(
-        { projectId: projectId },
-        { treeStructure: treeStructureData.treeStructure }
-      );
+      treeStructureData.markModified("treeStructure");
+      await treeStructureData.save();
+
+      // await FTAtreeData.findOneAndUpdate(
+      //   { projectId: projectId },
+      //   { treeStructure: treeStructureData.treeStructure },
+      //   { new: true, runValidators: true }
+      // );
 
       res.status(200).json({
         message: "Child node updated successfully.",
@@ -303,8 +313,22 @@ export async function updateFTAtreeStructure(req, res, next) {
     next(err);
   }
 }
+function countNodes(node) {
+  if (!node) return 0;
+
+  let count = 1; // current node
+
+  if (node.children && node.children.length > 0) {
+    for (let child of node.children) {
+      count += countNodes(child);
+    }
+  }
+
+  return count;
+}
 
 export async function deleteFTAtreeStructure(req, res, next) {
+
   const { parantId, deleteId } = req.params; // Note: 'parantId' is misspelled
   console.log(parantId, "- parentId");
   console.log(deleteId, "- deleteId");
@@ -335,7 +359,8 @@ export async function deleteFTAtreeStructure(req, res, next) {
       console.log("Deleting entire document - root node match");
       // This is the root node - delete the entire document
       console.log(parantId, 'parantId')
-      await FTAtreeData.findByIdAndDelete(parantId);
+      const val = await FTAtreeData.findByIdAndDelete(parantId);
+      console.log(val, 'val val')
       const res1 = await FTAproduct.findByIdAndDelete(deleteId);
       console.log(res1, 'res')
 
@@ -363,7 +388,7 @@ export async function deleteFTAtreeStructure(req, res, next) {
     // Deep clone the tree structure
     const treeStructure = JSON.parse(JSON.stringify(treeStructureData.treeStructure));
 
-    function deleteNode(node) {
+    async function deleteNode(node) {
       if (!node.children || node.children.length === 0) return false;
 
       for (let i = 0; i < node.children.length; i++) {
@@ -371,43 +396,49 @@ export async function deleteFTAtreeStructure(req, res, next) {
         const childId = node.children[i].id.toString();
 
         if (childId === deleteIdStr) {
-          console.log("Found child to delete at index:", i);
-          // Remove the child
+          console.log("Deleting child from DB:", deleteIdStr);
+
+          await FTAproduct.findByIdAndDelete(deleteIdStr);
+
+          // Remove from tree
           node.children.splice(i, 1);
+
           return true;
         } else if (node.children[i].children && node.children[i].children.length > 0) {
           // Recursively check deeper
-          const deleted = deleteNode(node.children[i]);
+          const deleted = await deleteNode(node.children[i]);
           if (deleted) return true;
         }
       }
       return false;
     }
 
-    const deleted = deleteNode(treeStructure);
+    const deleted = await deleteNode(treeStructure);
 
     if (deleted) {
       console.log("Child deleted, updating document");
-      // Update the document
-      // await FTAtreeData.findOneAndUpdate(
-      //   { _id: parantId },
-      //   { treeStructure: treeStructure },
-      //   { new: true, runValidators: true }
-      // );
-
-      // // Update index numbers after deletion
-      // await updateNodeIndex(parantId);
 
       updateEachNode(treeStructure);
+
+      // ✅ calculate first
+      const totalGateId = countNodes(treeStructure);
+
+      // ✅ fetch once
       const document = await FTAtreeData.findById(parantId);
+
       document.treeStructure = treeStructure;
+      document.totalGateId = totalGateId;
+
       document.markModified("treeStructure");
+
+      // ✅ single save
       await document.save();
 
-      res.status(200).json({
+      return res.status(200).json({
         status: "Child Deleted",
         message: "Child node deleted successfully.",
       });
+
     } else {
       console.log("Child not found with ID:", deleteIdStr);
       res.status(404).json({
@@ -466,10 +497,13 @@ export async function getLastGateId(req, res, next) {
 
   try {
     const data = req.params;
+    console.log(data, 'data')
     let gateId = await FTAtreeData.find({
       projectId: data.projectId,
       companyId: data.companyId,
     });
+    console.log(gateId, 'gateId')
+
     if (gateId) {
       res.status(200).json({
         status: "Success",
