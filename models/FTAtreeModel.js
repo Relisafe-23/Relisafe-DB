@@ -62,6 +62,9 @@ const FTAtreeSchema = new Schema({
   fr: {
     type: String,
   },
+   failuremode :{
+    type: String,
+  }
 });
 
 FTAtreeSchema.method("toJSON", function () {

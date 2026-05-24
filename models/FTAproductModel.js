@@ -56,6 +56,7 @@ const FTAproductSchema = new Schema({
   isProducts: {
     type: String,
   },
+ 
 });
 
 FTAproductSchema.method("toJSON", function () {
